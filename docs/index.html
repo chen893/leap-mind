@@ -1,0 +1,345 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style type="text/tailwindcss">
+    @theme {
+        --color-clifford: #da373d;
+        --color-space: #0f172a;
+        --color-neon: #38bdf8;
+        --color-explosion: #f97316;
+      }
+      
+      @keyframes pulse-glow {
+        0%, 100% { opacity: 0.8; transform: scale(1); }
+        50% { opacity: 1; transform: scale(1.05); }
+      }
+      
+      .glow {
+        @extend pulse-glow;
+        animation: pulse-glow 2s infinite;
+      }
+      
+      .ship {
+        background: linear-gradient(45deg, #38bdf8, #0ea5e9);
+        box-shadow: 0 0 10px #38bdf8, 0 0 20px #0ea5e9;
+      }
+      
+      .bullet {
+        background: linear-gradient(to bottom, #38bdf8, #0ea5e9);
+        box-shadow: 0 0 5px #38bdf8;
+      }
+      
+      .enemy {
+        background: linear-gradient(to bottom, #f97316, #f43f5e);
+        box-shadow: 0 0 10px #f97316;
+      }
+    </style>
+</head>
+
+<body class="bg-[var(--color-space)] min-h-screen text-white">
+  <div id="app"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    function App() {
+      const [gameStarted, setGameStarted] = useState(false);
+      const [gameOver, setGameOver] = useState(false);
+      const [score, setScore] = useState(0);
+      const [playerPos, setPlayerPos] = useState(50);
+      const [bullets, setBullets] = useState([]);
+      const [enemies, setEnemies] = useState([]);
+      const gameAreaRef = useRef(null);
+      const lastTimeRef = useRef(0);
+      const enemySpeed = useRef(2);
+      const gameLoopRef = useRef(null);
+
+      // 启动游戏
+      const startGame = () => {
+        setGameStarted(true);
+        setGameOver(false);
+        setScore(0);
+        setBullets([]);
+        setEnemies([]);
+        enemySpeed.current = 2;
+        setTimeout(spawnEnemy, 2000);
+      };
+
+      // 敌机生成
+      const spawnEnemy = () => {
+        const randomLeft = Math.random() * 80;
+        setEnemies(prev => [...prev, {
+          id: Date.now(),
+          left: randomLeft,
+          top: -10,
+          destroyed: false
+        }]);
+
+        if (gameLoopRef.current) {
+          clearTimeout(gameLoopRef.current);
+        }
+
+        gameLoopRef.current = setTimeout(() => {
+          spawnEnemy();
+        }, Math.max(800 - score * 5, 300));
+      };
+
+      // 键盘控制
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if (!gameStarted || gameOver) return;
+
+          if (e.key === 'ArrowLeft') {
+            setPlayerPos(prev => Math.max(0, prev - 10));
+          }
+          if (e.key === 'ArrowRight') {
+            setPlayerPos(prev => Math.min(90, prev + 10));
+          }
+          if (e.key === ' ' || e.key === 'Spacebar') {
+            shoot();
+          }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [gameStarted, gameOver]);
+
+      // 子弹发射
+      const shoot = () => {
+        setBullets(prev => [...prev, {
+          id: Date.now(),
+          top: 85,
+          left: playerPos + 2.5
+        }]);
+      };
+
+      // 碰撞检测
+      const checkCollisions = () => {
+        const updatedBullets = [...bullets];
+        const updatedEnemies = [...enemies];
+
+        // 子弹与敌机碰撞
+        updatedBullets.forEach((bullet, bIndex) => {
+          if (bullet.destroyed) return;
+
+          updatedEnemies.forEach((enemy, eIndex) => {
+            if (enemy.destroyed) return;
+
+            const bulletRect = {
+              left: bullet.left,
+              top: bullet.top,
+              right: bullet.left + 0.5,
+              bottom: bullet.top + 2
+            };
+
+            const enemyRect = {
+              left: enemy.left,
+              top: enemy.top,
+              right: enemy.left + 10,
+              bottom: enemy.top + 10
+            };
+
+            if (
+              bulletRect.left < enemyRect.right &&
+              bulletRect.right > enemyRect.left &&
+              bulletRect.top < enemyRect.bottom &&
+              bulletRect.bottom > enemyRect.top
+            ) {
+              updatedBullets[bIndex] = { ...bullet, destroyed: true };
+              updatedEnemies[eIndex] = { ...enemy, destroyed: true };
+              setScore(prev => prev + 10);
+
+              // 提高速度
+              if (score % 50 === 0 && score > 0) {
+                enemySpeed.current += 0.5;
+              }
+            }
+          });
+        });
+
+        // 玩家与敌机碰撞
+        updatedEnemies.forEach(enemy => {
+          if (enemy.destroyed) return;
+
+          if (
+            playerPos < enemy.left + 10 &&
+            playerPos + 10 > enemy.left &&
+            90 < enemy.top + 10 &&
+            95 > enemy.top
+          ) {
+            endGame();
+          }
+        });
+
+        setBullets(updatedBullets);
+        setEnemies(updatedEnemies);
+      };
+
+      // 游戏结束
+      const endGame = () => {
+        setGameOver(true);
+        if (gameLoopRef.current) {
+          clearTimeout(gameLoopRef.current);
+        }
+      };
+
+      // 游戏循环
+      useEffect(() => {
+        if (!gameStarted || gameOver) return;
+
+        let animationId;
+        let lastTime = 0;
+
+        const gameLoop = (timestamp) => {
+          if (!lastTime) lastTime = timestamp;
+          const deltaTime = timestamp - lastTime;
+
+          // 移动子弹
+          setBullets(prev => prev
+            .filter(b => !b.destroyed)
+            .map(b => ({
+              ...b,
+              top: b.top - 0.2 * (deltaTime / 16)
+            }))
+            .filter(b => b.top > 0)
+          );
+
+          // 移动敌机
+          setEnemies(prev => prev
+            .filter(e => !e.destroyed)
+            .map(e => ({
+              ...e,
+              top: e.top + (enemySpeed.current * deltaTime / 16)
+            }))
+            .filter(e => e.top < 100)
+          );
+
+          // 碰撞检测
+          checkCollisions();
+
+          lastTime = timestamp;
+          animationId = requestAnimationFrame(gameLoop);
+        };
+
+        animationId = requestAnimationFrame(gameLoop);
+
+        return () => {
+          cancelAnimationFrame(animationId);
+        };
+      }, [gameStarted, gameOver]);
+
+      return (
+        <div className="flex flex-col items-center justify-center min-h-screen p-4">
+          {!gameStarted ? (
+            <div className="text-center space-y-4">
+              <h1 className="text-5xl font-bold mb-8 text-clifford glow">星际空战</h1>
+              <div className="space-y-2 text-lg">
+                <p>← → 移动 | 空格射击</p>
+                <p>击落敌机获取分数</p>
+              </div>
+              <button
+                onClick={startGame}
+                className="mt-8 px-8 py-3 bg-neon text-space rounded-full text-xl font-bold hover:bg-cyan-400 transition-all transform hover:scale-105"
+              >
+                开始游戏
+              </button>
+            </div>
+          ) : (
+            <div className="w-full max-w-2xl mx-auto">
+              <div className="flex justify-between mb-4">
+                <div className="text-2xl font-bold">分数: {score}</div>
+                {gameOver && (
+                  <div className="text-2xl font-bold text-red-500">游戏结束</div>
+                )}
+              </div>
+
+              <div
+                ref={gameAreaRef}
+                className="relative w-full h-96 bg-gray-800 border-4 border-neon rounded-lg overflow-hidden"
+              >
+                {/* 玩家飞机 */}
+                <div
+                  className="absolute bottom-5 w-10 h-10 ship rounded-lg transform rotate-12"
+                  style={{ left: `${playerPos}%` }}
+                >
+                  <div className="absolute top-0 left-1/2 w-1 h-4 bg-blue-300 transform -translate-x-1/2"></div>
+                </div>
+
+                {/* 子弹 */}
+                {bullets.map(bullet => (
+                  <div
+                    key={bullet.id}
+                    className="absolute w-1 h-4 bullet rounded-full"
+                    style={{
+                      left: `${bullet.left}%`,
+                      top: `${bullet.top}%`
+                    }}
+                  ></div>
+                ))}
+
+                {/* 敌机 */}
+                {enemies.map(enemy => (
+                  <div
+                    key={enemy.id}
+                    className={`absolute w-10 h-10 ${enemy.destroyed ? 'opacity-0' : 'enemy'} rounded-lg transform -rotate-12`}
+                    style={{
+                      left: `${enemy.left}%`,
+                      top: `${enemy.top}%`
+                    }}
+                  >
+                    <div className="absolute top-0 left-1/2 w-1 h-4 bg-orange-300 transform -translate-x-1/2"></div>
+                  </div>
+                ))}
+
+                {/* 背景星群 */}
+                {Array.from({ length: 50 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bg-white rounded-full"
+                    style={{
+                      left: `${Math.random() * 100}%`,
+                      top: `${Math.random() * 100}%`,
+                      width: `${Math.random() * 2 + 1}px`,
+                      height: `${Math.random() * 2 + 1}px`,
+                      opacity: Math.random() * 0.7 + 0.3,
+                      animation: `pulse ${Math.random() * 2 + 1}s infinite`
+                    }}
+                  ></div>
+                ))}
+              </div>
+
+              {gameOver && (
+                <div className="mt-4 text-center">
+                  <div className="text-3xl font-bold mb-2 text-red-500">游戏结束</div>
+                  <div className="text-xl mb-4">得分: {score}</div>
+                  <button
+                    onClick={startGame}
+                    className="px-6 py-2 bg-neon text-space rounded-full font-bold hover:bg-cyan-400 transition-all"
+                  >
+                    重新开始
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const container = document.getElementById('app');
+    const root = ReactDOM.createRoot(container);
+    root.render(<App />);
+  </script>
+</body>
+
+</html>

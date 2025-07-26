@@ -27,13 +27,13 @@ export function CourseHeader({
     onError: (error) => {
       toast({
         title: "发布失败",
-        description: error.message || "发布课程时出现错误，请稍后重试。",
+        description: error.message ?? "发布课程时出现错误，请稍后重试。",
         variant: "destructive",
       });
     },
   });
 
-  const unlockedChapters = userProgress?.unlockedChapters || [1];
+  const unlockedChapters = userProgress?.unlockedChapters ?? [1];
   const progressPercentage = course
     ? (unlockedChapters.length / course.chapters.length) * 100
     : 0;

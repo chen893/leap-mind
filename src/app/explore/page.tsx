@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
+  // CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -19,8 +19,8 @@ import {
   List,
   Search,
   Sparkles,
-  TrendingUp,
-  Users,
+  // TrendingUp,
+  // Users,
 } from "lucide-react";
 import { useState } from "react";
 

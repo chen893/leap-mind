@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+// import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -19,11 +19,11 @@ interface AIChatPanelProps {
   chapterNumber: number;
 }
 
-interface Message {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-}
+// interface Message {
+//   id: string;
+//   role: "user" | "assistant";
+//   content: string;
+// }
 
 export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
   const { messages, input, handleInputChange, handleSubmit, isLoading } =
@@ -135,7 +135,7 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
               disabled={isLoading}
               className="flex-1"
             />
-            <Button type="submit" disabled={isLoading || !input.trim()}>
+            <Button type="submit" disabled={isLoading ?? !input.trim()}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

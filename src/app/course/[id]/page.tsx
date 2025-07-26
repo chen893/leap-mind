@@ -26,7 +26,7 @@ export default function CoursePage() {
     api.course.getUserCourses.useQuery();
 
   const userProgress = userCourses?.find((p) => p.course.id === courseId);
-  const unlockedChapters = userProgress?.unlockedChapters || [1];
+  const unlockedChapters = userProgress?.unlockedChapters ?? [1];
   const isCreator = session?.user?.id === course?.creatorId;
 
   if (isLoading) {

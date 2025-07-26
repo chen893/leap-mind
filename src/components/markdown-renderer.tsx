@@ -6,12 +6,12 @@ import RehypeKatex from "rehype-katex";
 import RemarkGfm from "remark-gfm";
 import "github-markdown-css/github-markdown.css";
 import RehypeHighlight from "rehype-highlight";
-import { useRef, useState, RefObject, useEffect, useMemo, useCallback } from "react";
+import { useRef, useState, type RefObject, useEffect } from "react";
 // import { copyToClipboard, useWindowSize } from "../utils";
 import mermaid from "mermaid";
 // import Locale from "../locales";
 // import LoadingIcon from "../icons/three-dots.svg";
-import ReloadButtonIcon from "../icons/reload.svg";
+// import ReloadButtonIcon from "../icons/reload.svg";
 import React from "react";
 import { useDebouncedCallback } from "use-debounce";
 // import { showImageModal, FullScreen } from "./ui-lib";
@@ -37,19 +37,19 @@ export function Mermaid(props: { code: string }) {
           nodes: [ref.current],
           suppressErrors: true,
         })
-        .catch((e) => {
+        .catch((e: Error) => {
           setHasError(true);
           console.error("[Mermaid] ", e.message);
         });
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [props.code]);
 
   function viewSvgInNewWindow() {
     const svg = ref.current?.querySelector("svg");
     if (!svg) return;
-    const text = new XMLSerializer().serializeToString(svg);
-    const blob = new Blob([text], { type: "image/svg+xml" });
+    // const text = new XMLSerializer().serializeToString(svg);
+    // const blob = new Blob([text], { type: "image/svg+xml" });
     // showImageModal(URL.createObjectURL(blob));
   }
 
@@ -72,7 +72,7 @@ export function Mermaid(props: { code: string }) {
   );
 }
 
-export function PreCode(props: { children: any }) {
+export function PreCode(props: { children: React.ReactNode }) {
   const ref = useRef<HTMLPreElement>(null);
   // const previewRef = useRef<HTMLPreviewHander>(null);
   const [mermaidCode, setMermaidCode] = useState("");
@@ -92,8 +92,8 @@ export function PreCode(props: { children: any }) {
     if (htmlDom) {
       setHtmlCode((htmlDom as HTMLElement).innerText);
     } else if (
-      refText?.startsWith("<!DOCTYPE") ||
-      refText?.startsWith("<svg") ||
+      refText?.startsWith("<!DOCTYPE") ??
+      refText?.startsWith("<svg") ??
       refText?.startsWith("<?xml")
     ) {
       setHtmlCode(refText);
@@ -109,7 +109,7 @@ export function PreCode(props: { children: any }) {
     if (ref.current) {
       const codeElements = ref.current.querySelectorAll(
         "code",
-      ) as NodeListOf<HTMLElement>;
+      );
       const wrapLanguages = [
         "",
         "md",
@@ -121,15 +121,15 @@ export function PreCode(props: { children: any }) {
         "latex",
       ];
       codeElements.forEach((codeElement) => {
-        let languageClass = codeElement.className.match(/language-(\w+)/);
-        let name = languageClass ? languageClass[1] ?? '' : "";
+        const languageClass = /language-(\w+)/.exec(codeElement.className);
+        const name = languageClass ? languageClass[1] ?? '' : "";
         if (wrapLanguages.includes(name)) {
           codeElement.style.whiteSpace = "pre-wrap";
         }
       });
-      setTimeout(renderArtifacts, 1);
+      void setTimeout(renderArtifacts, 1);
     }
-  }, []);
+  }, [renderArtifacts]);
 
   return (
     <>
@@ -175,68 +175,68 @@ export function PreCode(props: { children: any }) {
   );
 }
 
-function CustomCode(props: { children: any; className?: string }) {
-  // const chatStore = useChatStore();
-  // const session = chatStore.currentSession();
-  // const config = useAppConfig();
-  const enableCodeFold =
-    // 
-    false;
+// function CustomCode(props: { children: React.ReactNode; className?: string }) {
+//   // const chatStore = useChatStore();
+//   // const session = chatStore.currentSession();
+//   // const config = useAppConfig();
+//   const enableCodeFold =
+//     // 
+//     false;
 
-  const ref = useRef<HTMLPreElement>(null);
-  const [collapsed, setCollapsed] = useState(true);
-  const [showToggle, setShowToggle] = useState(false);
+//   const ref = useRef<HTMLPreElement>(null);
+//   const [collapsed, setCollapsed] = useState(true);
+//   const [showToggle, setShowToggle] = useState(false);
 
-  useEffect(() => {
-    if (ref.current) {
-      const codeHeight = ref.current.scrollHeight;
-      setShowToggle(codeHeight > 400);
-      ref.current.scrollTop = ref.current.scrollHeight;
-    }
-  }, [props.children]);
+//   useEffect(() => {
+//     if (ref.current) {
+//       const codeHeight = ref.current.scrollHeight;
+//       setShowToggle(codeHeight > 400);
+//       ref.current.scrollTop = ref.current.scrollHeight;
+//     }
+//   }, [props.children]);
 
-  const toggleCollapsed = () => {
-    setCollapsed((collapsed) => !collapsed);
-  };
-  const renderShowMoreButton = () => {
-    if (showToggle && enableCodeFold && collapsed) {
-      return (
-        <div
-          className={clsx("show-hide-button", {
-            collapsed,
-            expanded: !collapsed,
-          })}
-        >
-          <button onClick={toggleCollapsed}>更多</button>
-        </div>
-      );
-    }
-    return null;
-  };
-  return (
-    <>
-      <code
-        className={clsx(props?.className)}
-        ref={ref}
-        style={{
-          maxHeight: enableCodeFold && collapsed ? "400px" : "none",
-          overflowY: "hidden",
-        }}
-      >
-        {props.children}
-      </code>
+//   const toggleCollapsed = () => {
+//     setCollapsed((collapsed) => !collapsed);
+//   };
+//   const renderShowMoreButton = () => {
+//     if (showToggle && enableCodeFold && collapsed) {
+//       return (
+//         <div
+//           className={clsx("show-hide-button", {
+//             collapsed,
+//             expanded: !collapsed,
+//           })}
+//         >
+//           <button onClick={toggleCollapsed}>更多</button>
+//         </div>
+//       );
+//     }
+//     return null;
+//   };
+//   return (
+//     <>
+//       <code
+//         className={clsx(props?.className)}
+//         ref={ref}
+//         style={{
+//           maxHeight: enableCodeFold && collapsed ? "400px" : "none",
+//           overflowY: "hidden",
+//         }}
+//       >
+//         {props.children}
+//       </code>
 
-      {renderShowMoreButton()}
-    </>
-  );
-}
+//       {renderShowMoreButton()}
+//     </>
+//   );
+// }
 
 function escapeBrackets(text: string) {
   const pattern =
     /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g;
   return text.replace(
     pattern,
-    (match, codeBlock, squareBracket, roundBracket) => {
+    (match: string, codeBlock: string, squareBracket: string, roundBracket: string): string => {
       if (codeBlock) {
         return codeBlock;
       } else if (squareBracket) {
@@ -272,7 +272,7 @@ function tryWrapHtmlCode(text: string) {
 
 // const debounceSetContent = useDebouncedCallback
 
-function _MarkDownContent(props: { content: string, isBottom: boolean  }) {
+function MarkDownContentInternal(props: { content: string, isBottom: boolean  }) {
   const [escapedContent, setEscapedContent] = useState(props.content);
 
   const time = useRef<number>((Date.now()));
@@ -295,7 +295,7 @@ function _MarkDownContent(props: { content: string, isBottom: boolean  }) {
       })
     }
 
-  }, [props.content])
+  }, [props.content, props.isBottom])
   // const escapedContent = useMemo(() => {
 
   //   const debouncedContent = 
@@ -322,7 +322,7 @@ function _MarkDownContent(props: { content: string, isBottom: boolean  }) {
         // code: CustomCode,
         p: (pProps) => <p {...pProps} dir="auto" />,
         a: (aProps) => {
-          const href = aProps.href || "";
+          const href = aProps.href ?? "";
           if (/\.(aac|mp3|opus|wav)$/.test(href)) {
             return (
               <figure>
@@ -338,7 +338,7 @@ function _MarkDownContent(props: { content: string, isBottom: boolean  }) {
             );
           }
           const isInternal = /^\/#/i.test(href);
-          const target = isInternal ? "_self" : aProps.target ?? "_blank";
+          const target = isInternal ? "_self" : (aProps.target ?? "_blank");
           return <a {...aProps} target={target} />;
         },
       }}
@@ -351,7 +351,7 @@ function _MarkDownContent(props: { content: string, isBottom: boolean  }) {
   );
 }
 
-export const MarkdownContent = React.memo(_MarkDownContent);
+export const MarkdownContent = React.memo(MarkDownContentInternal);
 
 export function Markdown(
   props: {
@@ -376,7 +376,7 @@ export function Markdown(
       }}
       style={{
         fontSize: `${props.fontSize ?? 14}px`,
-        fontFamily: props.fontFamily || "inherit",
+        fontFamily: props.fontFamily ?? "inherit",
       }}
       ref={mdRef}
       onContextMenu={props.onContextMenu}

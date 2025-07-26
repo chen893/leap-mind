@@ -30,7 +30,7 @@ export interface CourseCardProps {
       name: string | null;
       image: string | null;
     };
-    chapters: Pick<Chapter, 'id' | 'title' | 'chapterNumber'>[];
+    // chapters: Pick<Chapter, "id" | "title" | "chapterNumber">[];
     clonedByCount?: number;
   };
   progress?: {

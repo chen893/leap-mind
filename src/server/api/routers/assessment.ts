@@ -49,7 +49,7 @@ export const assessmentRouter = createTRPCRouter({
           });
 
           if (progress) {
-            const unlockedChapters = progress.unlockedChapters as number[];
+            const unlockedChapters = progress.unlockedChapters;
             const nextChapter = chapter.chapterNumber + 1;
             
             if (!unlockedChapters.includes(nextChapter)) {
@@ -81,7 +81,11 @@ export const assessmentRouter = createTRPCRouter({
       })
     )
     .query(async ({ ctx, input }) => {
-      const where: any = {
+      const where: {
+        userId: string;
+        chapterId?: string;
+        chapter?: { courseId: string };
+      } = {
         userId: ctx.session.user.id,
       };
 

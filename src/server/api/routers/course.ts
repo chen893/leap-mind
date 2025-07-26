@@ -4,8 +4,8 @@ import {
   protectedProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
-import { createOpenAI } from '@ai-sdk/openai';
-import { generateObject } from 'ai';
+import { createOpenAI } from "@ai-sdk/openai";
+import { generateObject } from "ai";
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -23,7 +23,7 @@ export const courseRouter = createTRPCRouter({
     .input(
       z.object({
         userInput: z.string().min(1).max(1000),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       try {
@@ -53,7 +53,7 @@ export const courseRouter = createTRPCRouter({
 用户需求: \`${input.userInput}\`
 `;
         const result = await generateObject({
-          model: openai(process.env.OPENAI_MODEL || 'gpt-4'),
+          model: openai(process.env.OPENAI_MODEL ?? "gpt-4"),
           prompt,
           schema: titleDescriptionSchema,
           temperature: 0.7,
@@ -62,8 +62,8 @@ export const courseRouter = createTRPCRouter({
 
         return result.object;
       } catch (error) {
-        console.error('AI title and description generation error:', error);
-        throw new Error('生成标题和描述失败，请稍后重试');
+        console.error("AI title and description generation error:", error);
+        throw new Error("生成标题和描述失败，请稍后重试");
       }
     }),
 
@@ -74,7 +74,7 @@ export const courseRouter = createTRPCRouter({
         title: z.string().min(1).max(200),
         description: z.string().min(1).max(1000),
         level: z.enum(["beginner", "intermediate"]),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       // 创建课程记录
@@ -88,37 +88,46 @@ export const courseRouter = createTRPCRouter({
 
       // 调用AI生成课程大纲
       try {
-        const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/generate-outline`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        const response = await fetch(
+          `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/api/ai/generate-outline`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              title: input.title,
+              description: input.description,
+              level: input.level,
+            }),
           },
-          body: JSON.stringify({
-            title: input.title,
-            description: input.description,
-            level: input.level,
-          }),
-        });
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to generate outline');
+          throw new Error("Failed to generate outline");
         }
 
-        const aiOutline = await response.json();
-        
+        const aiOutline = (await response.json()) as {
+          chapters: { title: string; description: string }[];
+        };
+
         // 创建AI生成的章节结构
         const chapters = await Promise.all(
-          aiOutline.chapters.map((chapterData: { title: string; description: string }, index: number) =>
-            ctx.db.chapter.create({
-              data: {
-                courseId: course.id,
-                chapterNumber: index + 1,
-                description: chapterData.description,
-                title: chapterData.title,
-                // contentMd 保持为空，按需生成
-              },
-            })
-          )
+          aiOutline.chapters.map(
+            (
+              chapterData: { title: string; description: string },
+              index: number,
+            ) =>
+              ctx.db.chapter.create({
+                data: {
+                  courseId: course.id,
+                  chapterNumber: index + 1,
+                  description: chapterData.description,
+                  title: chapterData.title,
+                  // contentMd 保持为空，按需生成
+                },
+              }),
+          ),
         );
 
         // 创建用户课程进度记录
@@ -137,8 +146,8 @@ export const courseRouter = createTRPCRouter({
         };
       } catch (error) {
         // 如果AI生成失败，回退到基础章节结构
-        console.error('AI outline generation failed:', error);
-        
+        console.error("AI outline generation failed:", error);
+
         const fallbackChapterTitles = [
           "基础概念介绍",
           "核心原理解析",
@@ -156,8 +165,8 @@ export const courseRouter = createTRPCRouter({
                 title,
                 // contentMd 保持为空，按需生成
               },
-            })
-          )
+            }),
+          ),
         );
 
         // 创建用户课程进度记录
@@ -244,7 +253,7 @@ export const courseRouter = createTRPCRouter({
       z.object({
         limit: z.number().min(1).max(50).default(10),
         cursor: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const courses = await ctx.db.course.findMany({
@@ -266,7 +275,7 @@ export const courseRouter = createTRPCRouter({
           },
         },
         orderBy: {
-          clonedByCount: "desc",
+          joinedByCount: "desc",
         },
         take: input.limit + 1,
         cursor: input.cursor ? { id: input.cursor } : undefined,
@@ -323,8 +332,8 @@ export const courseRouter = createTRPCRouter({
               contentMd: chapter.contentMd,
               contentQualityScore: chapter.contentQualityScore,
             },
-          })
-        )
+          }),
+        ),
       );
 
       // 创建用户进度记录
@@ -341,7 +350,7 @@ export const courseRouter = createTRPCRouter({
       await ctx.db.course.update({
         where: { id: input.courseId },
         data: {
-          clonedByCount: {
+          joinedByCount: {
             increment: 1,
           },
         },

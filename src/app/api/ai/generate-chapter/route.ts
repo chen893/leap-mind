@@ -1,74 +1,79 @@
-import { env } from "@/env";
+// import { env } from "@/env";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 const openai = createOpenAI({
-	apiKey: process.env.OPENAI_API_KEY,
-	baseURL: process.env.OPENAI_BASE_URL,
+  apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL,
 });
 
 export async function POST(req: Request) {
-	try {
-		console.log("开始调用");
-		const session = await auth();
-		if (!session?.user) {
-			return new Response("Unauthorized", { status: 401 });
-		}
+  try {
+    console.log("开始调用");
+    const session = await auth();
+    if (!session?.user) {
+      return new Response("Unauthorized", { status: 401 });
+    }
 
-		const { chapterId, courseTitle, chapterTitle, level } = await req.json();
-		
-		// 验证章节存在且用户有权限
-		const chapter = await db.chapter.findUnique({
-			where: { id: chapterId },
-			include: {
-				course: {
-					include: {
-						chapters: {
-							orderBy: {
-								chapterNumber: "asc",
-							},
-							select: {
-								chapterNumber: true,
-								title: true,
-								description: true
-							},
-						},
-						userProgresses: {
-							where: {
-								userId: session.user.id,
-							},
-						},
-					},
-				},
-			},
-		});
+    const { chapterId, courseTitle, chapterTitle, level } = await req.json() as {
+      chapterId: string;
+      courseTitle: string;
+      chapterTitle: string;
+      level: string;
+    };
 
-		if (!chapter) {
-			return new Response("Chapter not found", { status: 404 });
-		}
-		// const course = 
-		// 检查用户权限（创建者或学习者）
-		const hasAccess =
-			chapter.course.creatorId === session.user.id ||
-			chapter.course.userProgresses.length > 0;
+    // 验证章节存在且用户有权限
+    const chapter = await db.chapter.findUnique({
+      where: { id: chapterId },
+      include: {
+        course: {
+          include: {
+            chapters: {
+              orderBy: {
+                chapterNumber: "asc",
+              },
+              select: {
+                chapterNumber: true,
+                title: true,
+                description: true,
+              },
+            },
+            userProgresses: {
+              where: {
+                userId: session.user.id,
+              },
+            },
+          },
+        },
+      },
+    });
 
-		if (!hasAccess) {
-			return new Response("Unauthorized", { status: 403 });
-		}
+    if (!chapter) {
+      return new Response("Chapter not found", { status: 404 });
+    }
+    // const course = chapter.course;
+    // 检查用户权限（创建者或学习者）
+    const hasAccess =
+      chapter.course.creatorId === session.user.id ||
+      chapter.course.userProgresses.length > 0;
 
-		// 如果内容已存在，直接返回
-		// if (chapter.contentMd) {
-		// 	return new Response(chapter.contentMd, {
-		// 		headers: {
-		// 			"Content-Type": "text/plain; charset=utf-8",
-		// 		},
-		// 	});
-		// }
+    if (!hasAccess) {
+      return new Response("Unauthorized", { status: 403 });
+    }
 
-		const chapters = chapter.course.chapters;
-		// 构建AI提示词
-		const prompt = `
+    // 如果内容已存在，直接返回
+    // if (chapter.contentMd) {
+    // 	return new Response(chapter.contentMd, {
+    // 		headers: {
+    // 			"Content-Type": "text/plain; charset=utf-8",
+    // 		},
+    // 	});
+    // }
+
+    const chapters = chapter.course.chapters;
+    // 构建AI提示词
+    const prompt = `
 角色设定：你是一位经验丰富的教学设计师和特定领域的专家。你的任务是为一门在线课程撰写其中一章的教学内容。你的讲解风格应该既专业权威，又通俗易懂，能够激发学生的学习兴趣。
 
 背景信息：
@@ -77,7 +82,7 @@ export async function POST(req: Request) {
 * 学习者水平：${level === "beginner" ? "初学者" : "有基础"}
 * 课程完整大纲：
     \`\`\`
-    ${chapters.map(c => `第${c.chapterNumber}章：${c.title} - ${c.description}`).join('\n')}
+    ${chapters.map((c) => `第${c.chapterNumber}章：${c.title} - ${c.description}`).join("\n")}
     \`\`\`
 * 当前需要生成的章节：${chapterTitle}
 
@@ -116,21 +121,21 @@ export async function POST(req: Request) {
 请现在开始生成内容。
 `;
 
-		const result = await streamText({
-			model: openai(process.env.OPENAI_MODEL || "gpt-4o"),
-			prompt,
-			temperature: 0.7,
+    const result = streamText({
+      model: openai(process.env.OPENAI_MODEL ?? "gpt-4o"),
+      prompt,
+      temperature: 0.7,
       maxTokens: 16000,
-			onFinish: async (event) => {
-				try {
-					await db.chapter.update({
-						where: { id: chapterId },
-						data: {
-							contentMd: event.text,
-							generationCost: 0,
-							lastUpdated: new Date(),
-						}
-					});
+      onFinish: async (event: { text: string }) => {
+        try {
+          await db.chapter.update({
+            where: { id: chapterId },
+            data: {
+              contentMd: event.text,
+              generationCost: 0,
+              lastUpdated: new Date(),
+            },
+          });
           const progress = await db.userCourseProgress.findUnique({
             where: {
               userId_courseId: {
@@ -139,35 +144,32 @@ export async function POST(req: Request) {
               },
             },
           });
-					if (progress) {
-						const unlockedChapters = progress.unlockedChapters as number[];
-						const nextChapter = chapter.chapterNumber + 1;
-						if (!unlockedChapters.includes(nextChapter)) {
-							await db.userCourseProgress.update({
-								where: {
-									userId_courseId: {
-										userId: session.user.id,
-										courseId: chapter.courseId,
-									},
-								},
-								data: {
-									unlockedChapters: [...unlockedChapters, nextChapter],
-								},
-							});
-						}
+          if (progress) {
+            const unlockedChapters = progress.unlockedChapters;
+            const nextChapter = chapter.chapterNumber + 1;
+            if (!unlockedChapters.includes(nextChapter)) {
+              await db.userCourseProgress.update({
+                where: {
+                  userId_courseId: {
+                    userId: session.user.id,
+                    courseId: chapter.courseId,
+                  },
+                },
+                data: {
+                  unlockedChapters: [...unlockedChapters, nextChapter],
+                },
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to save chapter content:", error);
+        }
+      },
+    });
 
-					}
-
-				} catch (error) {
-					console.error("Failed to save chapter content:", error);
-				}
-			},
-		});
-
-		return result.toDataStreamResponse();
-
-	} catch (error) {
-		console.error("AI generation error:", error);
-		return new Response("Internal server error", { status: 500 });
-	}
+    return result.toDataStreamResponse();
+  } catch (error) {
+    console.error("AI generation error:", error);
+    return new Response("Internal server error", { status: 500 });
+  }
 }

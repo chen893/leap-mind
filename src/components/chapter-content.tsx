@@ -13,7 +13,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/trpc/react";
 import { useCompletion } from "@ai-sdk/react";
 import { BookOpen, Loader2, RefreshCw } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Markdown } from "./markdown-renderer";
 
 interface ChapterContentProps {
@@ -35,7 +35,7 @@ export function ChapterContent({
   const { data: chapter, refetch } = api.chapter.getById.useQuery(
     {
       id:
-        course?.chapters.find((c) => c.chapterNumber === chapterNumber)?.id ||
+        course?.chapters.find((c) => c.chapterNumber === chapterNumber)?.id ??
         "",
     },
     { enabled: !!course && isUnlocked }
@@ -61,9 +61,9 @@ export function ChapterContent({
         title: "内容生成成功！",
         description: "章节内容已更新",
       });
-      setTimeout(() => {
+      void setTimeout(() => {
         console.log("refetch");
-        refetch();
+        void refetch();
         refetchSideChapters?.();
       }, 3000);
     },
@@ -71,12 +71,12 @@ export function ChapterContent({
 
   useEffect(() => {
     setCompletion("");
-  }, [chapter?.courseId]);
+  }, [chapter?.courseId, setCompletion]);
   const contentMd = useMemo(() => {
     if (completion) {
       return completion;
     } else {
-      return chapter?.contentMd || "";
+      return chapter?.contentMd ?? "";
     }
   }, [chapter?.contentMd, completion]);
 
@@ -85,7 +85,7 @@ export function ChapterContent({
     if (!chapter) return;
     count.current++;
 
-    complete("", {
+    void complete("", {
       body: {
         chapterId: chapter.id,
         courseTitle: course?.title,
@@ -165,7 +165,7 @@ export function ChapterContent({
               准备开始学习
             </h3>
             <p className="mb-4 text-gray-600">
-              点击"生成内容"按钮，AI将为你创建个性化的学习材料
+              点击&quot;生成内容&quot;按钮，AI将为你创建个性化的学习材料
             </p>
           </div>
         )}

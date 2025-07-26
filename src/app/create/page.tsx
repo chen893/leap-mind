@@ -22,7 +22,6 @@ import { useToast } from "@/components/ui/use-toast";
 import { api } from "@/trpc/react";
 import {
   ArrowRight,
-  BookOpen,
   CheckCircle,
   Lightbulb,
   Loader2,

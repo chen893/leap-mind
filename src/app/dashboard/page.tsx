@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
+  // CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -33,16 +33,16 @@ export default function DashboardPage() {
   }
 
   const inProgressCourses =
-    userCourses?.filter((p) => p.status === "IN_PROGRESS") || [];
+    userCourses?.filter((p) => p.status === "IN_PROGRESS") ?? [];
   const completedCourses =
-    userCourses?.filter((p) => p.status === "COMPLETED") || [];
+    userCourses?.filter((p) => p.status === "COMPLETED") ?? [];
   const createdCourses =
-    userCourses?.filter((p) => p.course.creatorId === session.user.id) || [];
+    userCourses?.filter((p) => p.course.creatorId === session.user.id) ?? [];
 
   const totalChapters =
-    userCourses?.reduce((sum, p) => sum + p.course.chapters.length, 0) || 0;
+    userCourses?.reduce((sum, p) => sum + p.course.chapters.length, 0) ?? 0;
   const completedChapters =
-    userCourses?.reduce((sum, p) => sum + p.unlockedChapters.length, 0) || 0;
+    userCourses?.reduce((sum, p) => sum + p.unlockedChapters.length, 0) ?? 0;
 
   return (
     <div className="min-h-screen bg-gray-50">

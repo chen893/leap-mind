@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { BookOpen, Plus, Users } from "lucide-react";
+import { BookOpen, Heart, Plus, Users } from "lucide-react";
 import { signIn, signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 
@@ -20,7 +20,7 @@ export function Navbar() {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link href="/" className="flex items-center space-x-2">
           <BookOpen className="h-6 w-6 text-blue-600" />
-          <span className="font-bold text-gray-900 text-xl">智学奇点</span>
+          <span className="text-xl font-bold text-gray-900">智学奇点</span>
         </Link>
 
         <div className="flex items-center space-x-4">
@@ -30,6 +30,15 @@ export function Navbar() {
               <span>内容广场</span>
             </Button>
           </Link>
+
+          {session && (
+            <Link href="/bookmarks">
+              <Button variant="ghost" className="flex items-center space-x-2">
+                <Heart className="h-4 w-4" />
+                <span>我的收藏</span>
+              </Button>
+            </Link>
+          )}
 
           {session ? (
             <>
@@ -48,8 +57,8 @@ export function Navbar() {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={session.user?.image || ""}
-                        alt={session.user?.name || ""}
+                        src={session.user?.image ?? "/default-avatar.png"}
+                        alt={session.user?.name ?? "用户头像"}
                       />
                       <AvatarFallback>{session.user?.name?.[0]}</AvatarFallback>
                     </Avatar>

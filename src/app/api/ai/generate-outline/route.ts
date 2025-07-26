@@ -1,9 +1,9 @@
-import { createOpenAI } from '@ai-sdk/openai';
+import { createOpenAI } from "@ai-sdk/openai";
 // import { google } from '@ai-sdk/google';
 
-import { generateObject } from 'ai';
-import { auth } from '@/server/auth';
-import { z } from 'zod';
+import { generateObject } from "ai";
+// import { auth } from "@/server/auth";
+import { z } from "zod";
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
   baseURL: process.env.OPENAI_BASE_URL,
@@ -15,22 +15,25 @@ const outlineSchema = z.object({
       title: z.string(),
       description: z.string(),
       estimatedTime: z.string(),
-    })
+    }),
   ),
 });
 
 export async function POST(req: Request) {
-
   try {
     // const session = await auth();
     // if (!session?.user) {
     //   return new Response('Unauthorized', { status: 401 });
     // }
 
-    const { title, level, description } = await req.json();
-  const levelText = level === 'beginner' ? '初学者' : '有基础';
+    const { title, level, description } = await req.json() as {
+      title: string;
+      level: string;
+      description: string;
+    };
+    const levelText = level === "beginner" ? "初学者" : "有基础";
 
-  const prompt = `
+    const prompt = `
 角色与目标：
 你是一个专业的教学设计师（Instructional Designer）和课程规划专家。你的任务是根据用户提供的课程主题、学习水平和简要描述，设计一个完整、有逻辑、循序渐进的学习大纲。
 
@@ -68,7 +71,7 @@ export async function POST(req: Request) {
 `;
 
     const result = await generateObject({
-      model: openai(process.env.OPENAI_MODEL || 'gpt-4'),
+      model: openai(process.env.OPENAI_MODEL ?? "gpt-4"),
       prompt,
       schema: outlineSchema,
       temperature: 0.7,
@@ -76,7 +79,7 @@ export async function POST(req: Request) {
     });
     return Response.json(result.object);
   } catch (error) {
-    console.error('AI outline generation error:', error);
-    return new Response('Internal server error', { status: 500 });
+    console.error("AI outline generation error:", error);
+    return new Response("Internal server error", { status: 500 });
   }
 }

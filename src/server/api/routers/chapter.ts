@@ -1,9 +1,9 @@
-import { z } from "zod";
 import {
   createTRPCRouter,
   protectedProcedure,
   publicProcedure,
 } from "@/server/api/trpc";
+import { z } from "zod";
 
 export const chapterRouter = createTRPCRouter({
   // 获取章节内容
@@ -37,7 +37,7 @@ export const chapterRouter = createTRPCRouter({
         chapterId: z.string(),
         content: z.string(),
         generationCost: z.number().optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const chapter = await ctx.db.chapter.findUnique({
@@ -52,14 +52,14 @@ export const chapterRouter = createTRPCRouter({
       }
 
       // 检查权限（课程创建者或学习者）
-      const hasAccess = 
+      const hasAccess =
         chapter.course.creatorId === ctx.session.user.id ||
-        await ctx.db.userCourseProgress.findFirst({
+        (await ctx.db.userCourseProgress.findFirst({
           where: {
             userId: ctx.session.user.id,
             courseId: chapter.courseId,
           },
-        });
+        }));
 
       if (!hasAccess) {
         throw new Error("Unauthorized");
@@ -83,7 +83,7 @@ export const chapterRouter = createTRPCRouter({
       z.object({
         chapterId: z.string(),
         score: z.number().min(0).max(100),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const updatedChapter = await ctx.db.chapter.update({
@@ -102,7 +102,7 @@ export const chapterRouter = createTRPCRouter({
       z.object({
         chapterId: z.string(),
         regenerate: z.boolean().optional().default(false),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const chapter = await ctx.db.chapter.findUnique({
@@ -125,14 +125,14 @@ export const chapterRouter = createTRPCRouter({
       }
 
       // 检查权限
-      const hasAccess = 
+      const hasAccess =
         chapter.course.creatorId === ctx.session.user.id ||
-        await ctx.db.userCourseProgress.findFirst({
+        (await ctx.db.userCourseProgress.findFirst({
           where: {
             userId: ctx.session.user.id,
             courseId: chapter.courseId,
           },
-        });
+        }));
 
       if (!hasAccess) {
         throw new Error("Unauthorized");
@@ -145,41 +145,44 @@ export const chapterRouter = createTRPCRouter({
 
       try {
         // 调用AI生成章节内容
-        console.log('调用ai')
-        const response = await fetch(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/ai/generate-chapter`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
+        console.log("调用ai");
+        const response = await fetch(
+          `${process.env.NEXTAUTH_URL ?? "http://localhost:3000"}/api/ai/generate-chapter`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              courseTitle: chapter.course.title,
+              courseDescription: chapter.course.description,
+              chapterTitle: chapter.title,
+              chapterNumber: chapter.chapterNumber,
+              totalChapters: chapter.course.chapters.length,
+              previousChapters: chapter.course.chapters
+                .filter((c) => c.chapterNumber < chapter.chapterNumber)
+                .map((c) => ({ title: c.title, content: c.contentMd }))
+                .filter((c) => c.content), // 只包含已生成内容的章节
+            }),
           },
-          body: JSON.stringify({
-            courseTitle: chapter.course.title,
-            courseDescription: chapter.course.description,
-            chapterTitle: chapter.title,
-            chapterNumber: chapter.chapterNumber,
-            totalChapters: chapter.course.chapters.length,
-            previousChapters: chapter.course.chapters
-              .filter(c => c.chapterNumber < chapter.chapterNumber)
-              .map(c => ({ title: c.title, content: c.contentMd }))
-              .filter(c => c.content), // 只包含已生成内容的章节
-          }),
-        });
+        );
 
         if (!response.ok) {
-          throw new Error('Failed to generate chapter content');
+          throw new Error("Failed to generate chapter content");
         }
 
         const reader = response.body?.getReader();
         if (!reader) {
-          throw new Error('No response body');
+          throw new Error("No response body");
         }
 
-        let generatedContent = '';
+        let generatedContent = "";
         const decoder = new TextDecoder();
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-          
+
           const chunk = decoder.decode(value);
           generatedContent += chunk;
         }
@@ -195,8 +198,8 @@ export const chapterRouter = createTRPCRouter({
 
         return updatedChapter;
       } catch (error) {
-        console.error('Chapter content generation failed:', error);
-        throw new Error('Failed to generate chapter content');
+        console.error("Chapter content generation failed:", error);
+        throw new Error("Failed to generate chapter content");
       }
     }),
 });

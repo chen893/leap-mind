@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     //   return new Response('Unauthorized', { status: 401 });
     // }
 
-    const { title, level, description } = await req.json() as {
+    const { title, level, description } = (await req.json()) as {
       title: string;
       level: string;
       description: string;

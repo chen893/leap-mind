@@ -21,7 +21,9 @@ export function CourseCard({
 }: CourseCardProps) {
   // const { data: session } = useSession();
 
-  const progressPercentage = progress ? 0 * 100 : 0;
+  const progressPercentage = progress?.unlockedChapters?.length
+    ? (progress.unlockedChapters.length / course.chapters.length) * 100
+    : 0;
 
   return (
     <Card className="group relative overflow-hidden border-0 bg-white shadow-md transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
@@ -47,7 +49,7 @@ export function CourseCard({
         <div className="mt-4 flex items-center gap-4 text-sm text-gray-500">
           <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 transition-colors duration-300 group-hover:bg-blue-100 group-hover:text-blue-700">
             <BookOpen className="h-3.5 w-3.5" />
-            <span className="font-medium">{0} 章节</span>
+            <span className="font-medium">{course.chapters.length} 章节</span>
           </div>
           {course.clonedByCount !== undefined && (
             <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 transition-colors duration-300 group-hover:bg-green-100 group-hover:text-green-700">

@@ -44,12 +44,12 @@ export function CourseHeader({
 
   return (
     <div className="mb-6">
-      <div className="flex justify-between items-start mb-4">
+      <div className="mb-4 flex items-start justify-between">
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="mb-2 text-3xl font-bold text-gray-900">
             {course.title}
           </h1>
-          <p className="text-gray-600 mb-4">{course.description}</p>
+          <p className="mb-4 text-gray-600">{course.description}</p>
         </div>
 
         {/* 发布按钮 - 只有创建者且课程未公开时显示 */}
@@ -58,16 +58,16 @@ export function CourseHeader({
             <Button
               onClick={handlePublish}
               disabled={publishMutation.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-blue-600 text-white hover:bg-blue-700"
             >
               {publishMutation.isPending ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  <div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-white"></div>
                   发布中...
                 </>
               ) : (
                 <>
-                  <Globe className="h-4 w-4 mr-2" />
+                  <Globe className="mr-2 h-4 w-4" />
                   发布到广场
                 </>
               )}
@@ -78,8 +78,8 @@ export function CourseHeader({
         {/* 已发布状态显示 */}
         {course.isPublic && (
           <div className="ml-4">
-            <div className="flex items-center px-3 py-2 bg-green-50 text-green-700 rounded-lg border border-green-200">
-              <Share2 className="h-4 w-4 mr-2" />
+            <div className="flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700">
+              <Share2 className="mr-2 h-4 w-4" />
               <span className="text-sm font-medium">已发布到广场</span>
             </div>
           </div>
@@ -89,7 +89,7 @@ export function CourseHeader({
       {userProgress && (
         <div className="flex items-center space-x-4">
           <div className="flex-1">
-            <div className="flex justify-between text-sm mb-1">
+            <div className="mb-1 flex justify-between text-sm">
               <span>学习进度</span>
               <span>{Math.round(progressPercentage)}%</span>
             </div>

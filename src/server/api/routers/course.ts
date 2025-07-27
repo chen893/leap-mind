@@ -202,6 +202,7 @@ export const courseRouter = createTRPCRouter({
                 image: true,
               },
             },
+
             chapters: {
               orderBy: {
                 chapterNumber: "asc",
@@ -214,7 +215,6 @@ export const courseRouter = createTRPCRouter({
         updatedAt: "desc",
       },
     });
-
     return progresses;
   }),
 
@@ -266,6 +266,12 @@ export const courseRouter = createTRPCRouter({
               id: true,
               name: true,
               image: true,
+            },
+          },
+          chapters: {
+            select: {
+              id: true,
+              title: true,
             },
           },
           _count: {

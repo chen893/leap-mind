@@ -2,7 +2,7 @@
 
 import { CourseCard } from "@/components/course-card";
 import { Navbar } from "@/components/navbar";
-import { Button } from "@/components/ui/button";
+import { EnhancedButton } from "@/components/ui/enhanced-button";
 import {
   Card,
   CardContent,
@@ -23,30 +23,45 @@ import {
   // Users,
 } from "lucide-react";
 import { useState } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const { toast } = useToast();
 
   const {
     data: coursesData,
     fetchNextPage,
     hasNextPage,
-    isFetchingNextPage,
     isLoading,
+    isError,
   } = api.course.getPublicCourses.useInfiniteQuery(
     { limit: 12 },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
-    }
+    },
   );
 
   const courses = coursesData?.pages.flatMap((page) => page.courses) ?? [];
 
+  const handleLoadMore = async () => {
+    try {
+      await fetchNextPage();
+    } catch (error) {
+      toast({
+        title: "加载失败",
+        description: "无法加载更多课程，请稍后重试",
+        variant: "destructive",
+      });
+      throw error;
+    }
+  };
+
   const filteredCourses = courses.filter(
     (course) =>
       course.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      course.description.toLowerCase().includes(searchQuery.toLowerCase())
+      course.description.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   return (
@@ -62,33 +77,33 @@ export default function ExplorePage() {
           <div className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-purple-300/20 blur-3xl delay-1000" />
         </div>
 
-        <div className="container relative mx-auto px-4 py-20 text-center">
+        <div className="relative container mx-auto px-4 py-20 text-center">
           <div className="mx-auto max-w-4xl">
             {/* 增强的标题设计 */}
             <div className="mb-8 space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 text-white/90 backdrop-blur-sm">
                 <Sparkles className="h-4 w-4" />
-                <span className="font-medium text-sm">
+                <span className="text-sm font-medium">
                   AI驱动的智能学习平台
                 </span>
               </div>
 
-              <h1 className="font-bold text-5xl text-white leading-tight md:text-7xl">
+              <h1 className="text-5xl leading-tight font-bold text-white md:text-7xl">
                 内容广场
-                <span className="mt-3 block bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text font-medium text-3xl text-transparent md:text-5xl">
+                <span className="mt-3 block bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-medium text-transparent md:text-5xl">
                   探索无限可能
                 </span>
               </h1>
             </div>
 
-            <p className="mb-12 text-blue-100/90 text-xl leading-relaxed md:text-2xl">
+            <p className="mb-12 text-xl leading-relaxed text-blue-100/90 md:text-2xl">
               发现由AI生成的优质学习内容，开启你的智能学习之旅
             </p>
 
             {/* 重新设计的搜索区域 */}
             <div className="relative mx-auto max-w-2xl">
               <div className="group relative">
-                <div className="-inset-1 absolute rounded-3xl bg-gradient-to-r from-white/20 to-white/10 opacity-75 blur transition duration-1000 group-hover:opacity-100"></div>
+                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-white/20 to-white/10 opacity-75 blur transition duration-1000 group-hover:opacity-100"></div>
                 <div className="relative flex items-center">
                   <Search className="absolute left-6 z-10 h-5 w-5 text-gray-400" />
                   <Input
@@ -120,21 +135,21 @@ export default function ExplorePage() {
       <div className="container mx-auto px-4 py-16">
         {/* 重新设计的统计卡片 */}
         <div className="mb-16 grid gap-8 md:grid-cols-3">
-          <Card className="group hover:-translate-y-2 relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg transition-all duration-500 hover:shadow-2xl">
+          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="font-semibold text-blue-800 text-sm tracking-wide">
+              <CardTitle className="text-sm font-semibold tracking-wide text-blue-800">
                 总课程数
               </CardTitle>
-              <div className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-3 shadow-lg transition-transform duration-500 group-hover:rotate-3 group-hover:scale-110">
+              <div className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-3 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
                 <BookOpen className="h-5 w-5 text-white" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="font-bold text-4xl text-blue-900 tracking-tight">
+              <div className="text-4xl font-bold tracking-tight text-blue-900">
                 {courses.length}
               </div>
-              <p className="mt-2 font-medium text-blue-600/80 text-sm">
+              <p className="mt-2 text-sm font-medium text-blue-600/80">
                 AI生成的优质内容
               </p>
             </CardContent>
@@ -146,17 +161,17 @@ export default function ExplorePage() {
         {/* Filter and View Controls */}
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-4">
-            <h2 className="font-bold text-2xl text-gray-900">探索课程</h2>
-            <span className="rounded-full bg-blue-100 px-3 py-1 font-medium text-blue-800 text-sm">
+            <h2 className="text-2xl font-bold text-gray-900">探索课程</h2>
+            <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
               {filteredCourses.length} 门课程
             </span>
           </div>
 
           <div className="flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
+            <EnhancedButton variant="outline" size="sm" className="gap-2">
               <Filter className="h-4 w-4" />
               筛选
-            </Button>
+            </EnhancedButton>
 
             <div className="flex items-center rounded-lg bg-gray-100 p-1">
               <button
@@ -227,21 +242,15 @@ export default function ExplorePage() {
 
             {hasNextPage && (
               <div className="mt-12 text-center">
-                <Button
-                  onClick={() => fetchNextPage()}
-                  disabled={isFetchingNextPage}
+                <EnhancedButton
+                  buttonId="load-more-courses"
+                  onAsyncClick={handleLoadMore}
                   size="lg"
                   className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-3 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+                  loadingText="加载中..."
                 >
-                  {isFetchingNextPage ? (
-                    <>
-                      <div className="mr-2 h-4 w-4 animate-spin rounded-full border-white border-b-2"></div>
-                      加载中...
-                    </>
-                  ) : (
-                    "加载更多课程"
-                  )}
-                </Button>
+                  加载更多课程
+                </EnhancedButton>
               </div>
             )}
           </>
@@ -250,7 +259,7 @@ export default function ExplorePage() {
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-gray-100 to-gray-200">
               <BookOpen className="h-12 w-12 text-gray-400" />
             </div>
-            <h3 className="mb-3 font-semibold text-gray-900 text-xl">
+            <h3 className="mb-3 text-xl font-semibold text-gray-900">
               {searchQuery ? "未找到相关课程" : "暂无课程"}
             </h3>
             <p className="mx-auto mb-6 max-w-md text-gray-600">
@@ -259,9 +268,9 @@ export default function ExplorePage() {
                 : "成为第一个创建课程的用户，分享你的知识！"}
             </p>
             {!searchQuery && (
-              <Button className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              <EnhancedButton className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
                 创建第一门课程
-              </Button>
+              </EnhancedButton>
             )}
           </div>
         )}

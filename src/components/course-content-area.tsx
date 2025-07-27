@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { EnhancedButton } from "@/components/ui/enhanced-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChapterContent } from "@/components/chapter-content";
 import { AIChatPanel } from "@/components/ai-chat-panel";
 import { MessageCircle } from "lucide-react";
+import { useButtonState } from "@/store/ui-store";
 
 interface CourseContentAreaProps {
   courseId: string;
@@ -21,6 +23,7 @@ export function CourseContentArea({
   onRefetchUserCourses 
 }: CourseContentAreaProps) {
   const [showChat, setShowChat] = useState(false);
+  const chatToggleButtonState = useButtonState('toggle-chat');
 
   return (
     <Tabs defaultValue="content" className="w-full">
@@ -30,15 +33,16 @@ export function CourseContentArea({
           <TabsTrigger value="chat">AI助手</TabsTrigger>
         </TabsList>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setShowChat(!showChat)}
-          className="lg:hidden"
-        >
-          <MessageCircle className="h-4 w-4 mr-2" />
-          AI助手
-        </Button>
+        <EnhancedButton
+           variant="outline"
+           size="sm"
+           onClick={() => setShowChat(!showChat)}
+           className="lg:hidden"
+           buttonId="toggle-chat"
+         >
+           <MessageCircle className="h-4 w-4 mr-2" />
+           AI助手
+         </EnhancedButton>
       </div>
 
       <TabsContent value="content">

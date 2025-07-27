@@ -31,7 +31,7 @@ export interface CourseCardProps {
       image: string | null;
     };
     chapters: Pick<Chapter, "id" | "title">[];
-    clonedByCount?: number;
+    joinedByCount?: number;
   };
   progress?: {
     status: string;

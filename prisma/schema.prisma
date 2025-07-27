@@ -51,13 +51,13 @@ model User {
     githubId      String?   @unique
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
-    
+
     // Relations
-    accounts            Account[]
-    sessions            Session[]
-    createdCourses      Course[]              @relation("CourseCreator")
-    courseProgresses    UserCourseProgress[]
-    assessments         Assessment[]
+    accounts         Account[]
+    sessions         Session[]
+    createdCourses   Course[]             @relation("CourseCreator")
+    courseProgresses UserCourseProgress[]
+    assessments      Assessment[]
 }
 
 model VerificationToken {
@@ -70,61 +70,61 @@ model VerificationToken {
 
 // 课程模型
 model Course {
-    id                      String   @id @default(cuid())
-    title                   String
-    description             String   @db.Text
-    creatorId               String
-    isPublic                Boolean  @default(false)
-    clonedByCount           Int      @default(0)
-    averageScoreSum         BigInt   @default(0)
-    totalAssessmentsCount   Int      @default(0)
-    createdAt               DateTime @default(now())
-    updatedAt               DateTime @updatedAt
-    
+    id                    String   @id @default(cuid())
+    title                 String
+    description           String   @db.Text
+    creatorId             String
+    isPublic              Boolean  @default(false)
+    joinedByCount         Int      @default(0)
+    averageScoreSum       BigInt   @default(0)
+    totalAssessmentsCount Int      @default(0)
+    createdAt             DateTime @default(now())
+    updatedAt             DateTime @updatedAt
+
     // Relations
-    creator                 User                   @relation("CourseCreator", fields: [creatorId], references: [id], onDelete: Cascade)
-    chapters                Chapter[]
-    userProgresses          UserCourseProgress[]
-    
-    @@index([isPublic, clonedByCount])
+    creator        User                 @relation("CourseCreator", fields: [creatorId], references: [id], onDelete: Cascade)
+    chapters       Chapter[]
+    userProgresses UserCourseProgress[]
+
+    @@index([isPublic, joinedByCount])
     @@index([creatorId])
 }
 
 // 章节模型
 model Chapter {
-    id                    String   @id @default(cuid())
-    courseId              String
-    chapterNumber         Int
-    title                 String
-    description           String?   @db.Text  // 初始创建时允许为空，按需填充
-    contentMd             String?  @db.Text  // 初始创建时允许为空，按需填充
-    contentQualityScore   Float?   @default(0)  // 内容质量评分, 范围0-100
-    generationCost        Decimal? @db.Decimal(10, 4)  // 记录AI生成该内容的token消耗成本
-    lastUpdated           DateTime @updatedAt
-    createdAt             DateTime @default(now())
-    
+    id                  String   @id @default(cuid())
+    courseId            String
+    chapterNumber       Int
+    title               String
+    description         String?  @db.Text // 初始创建时允许为空，按需填充
+    contentMd           String?  @db.Text // 初始创建时允许为空，按需填充
+    contentQualityScore Float?   @default(0) // 内容质量评分, 范围0-100
+    generationCost      Decimal? @db.Decimal(10, 4) // 记录AI生成该内容的token消耗成本
+    lastUpdated         DateTime @updatedAt
+    createdAt           DateTime @default(now())
+
     // Relations
-    course                Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
-    assessments           Assessment[]
-    
+    course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    assessments Assessment[]
+
     @@unique([courseId, chapterNumber])
     @@index([courseId])
 }
 
 // 用户课程进度模型
 model UserCourseProgress {
-    id                    String   @id @default(cuid())
-    userId                String
-    courseId              String
-    status                CourseStatus @default(IN_PROGRESS)
-    unlockedChapters Int[] @default([1])
-    createdAt             DateTime @default(now())
-    updatedAt             DateTime @updatedAt
-    
+    id               String       @id @default(cuid())
+    userId           String
+    courseId         String
+    status           CourseStatus @default(IN_PROGRESS)
+    unlockedChapters Int[]        @default([1])
+    createdAt        DateTime     @default(now())
+    updatedAt        DateTime     @updatedAt
+
     // Relations
-    user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    course                Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-    
+    user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
     @@unique([userId, courseId])
     @@index([userId])
     @@index([courseId])
@@ -135,16 +135,16 @@ model Assessment {
     id              String   @id @default(cuid())
     chapterId       String
     userId          String
-    userAnswersJson Json     // 存储用户的答案
-    score           Int      // 评分
-    feedbackJson    Json     // AI反馈
-    canProgress     Boolean  @default(false)  // 是否可以继续下一章
+    userAnswersJson Json // 存储用户的答案
+    score           Int // 评分
+    feedbackJson    Json // AI反馈
+    canProgress     Boolean  @default(false) // 是否可以继续下一章
     createdAt       DateTime @default(now())
-    
+
     // Relations
-    chapter         Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
-    user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
+    chapter Chapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+    user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
     @@index([chapterId])
     @@index([userId])
     @@index([userId, chapterId])

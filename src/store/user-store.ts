@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
 
 interface UserState {
   currentCourse: string | null;
@@ -17,7 +17,7 @@ export const useUserStore = create<UserState>()(
       setCurrentChapter: (chapter) => set({ currentChapter: chapter }),
     }),
     {
-      name: 'user-storage',
-    }
-  )
+      name: "user-storage",
+    },
+  ),
 );

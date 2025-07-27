@@ -51,10 +51,10 @@ export function CourseCard({
             <BookOpen className="h-3.5 w-3.5" />
             <span className="font-medium">{course.chapters.length} 章节</span>
           </div>
-          {course.clonedByCount !== undefined && (
+          {course.joinedByCount !== undefined && (
             <div className="flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 transition-colors duration-300 group-hover:bg-green-100 group-hover:text-green-700">
               <Users className="h-3.5 w-3.5" />
-              <span className="font-medium">{course.clonedByCount} 人学习</span>
+              <span className="font-medium">{course.joinedByCount} 人学习</span>
             </div>
           )}
         </div>

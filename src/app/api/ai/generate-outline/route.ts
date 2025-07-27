@@ -31,6 +31,7 @@ export async function POST(req: Request) {
       level: string;
       description: string;
     };
+    // console.log("req", await req.json());
     const levelText = level === "beginner" ? "初学者" : "有基础";
 
     const prompt = `

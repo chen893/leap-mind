@@ -16,33 +16,33 @@ interface CourseContentAreaProps {
   onRefetchUserCourses: () => void;
 }
 
-export function CourseContentArea({ 
-  courseId, 
-  selectedChapter, 
-  unlockedChapters, 
-  onRefetchUserCourses 
+export function CourseContentArea({
+  courseId,
+  selectedChapter,
+  unlockedChapters,
+  onRefetchUserCourses,
 }: CourseContentAreaProps) {
   const [showChat, setShowChat] = useState(false);
-  const chatToggleButtonState = useButtonState('toggle-chat');
+  const chatToggleButtonState = useButtonState("toggle-chat");
 
   return (
     <Tabs defaultValue="content" className="w-full">
-      <div className="flex justify-between items-center mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <TabsList>
           <TabsTrigger value="content">学习内容</TabsTrigger>
           <TabsTrigger value="chat">AI助手</TabsTrigger>
         </TabsList>
 
         <EnhancedButton
-           variant="outline"
-           size="sm"
-           onClick={() => setShowChat(!showChat)}
-           className="lg:hidden"
-           buttonId="toggle-chat"
-         >
-           <MessageCircle className="h-4 w-4 mr-2" />
-           AI助手
-         </EnhancedButton>
+          variant="outline"
+          size="sm"
+          onClick={() => setShowChat(!showChat)}
+          className="lg:hidden"
+          buttonId="toggle-chat"
+        >
+          <MessageCircle className="mr-2 h-4 w-4" />
+          AI助手
+        </EnhancedButton>
       </div>
 
       <TabsContent value="content">
@@ -55,10 +55,7 @@ export function CourseContentArea({
       </TabsContent>
 
       <TabsContent value="chat">
-        <AIChatPanel
-          courseId={courseId}
-          chapterNumber={selectedChapter}
-        />
+        <AIChatPanel courseId={courseId} chapterNumber={selectedChapter} />
       </TabsContent>
     </Tabs>
   );

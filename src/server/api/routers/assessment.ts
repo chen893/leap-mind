@@ -1,8 +1,5 @@
 import { z } from "zod";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-} from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 
 export const assessmentRouter = createTRPCRouter({
   // 提交评估答案
@@ -14,7 +11,7 @@ export const assessmentRouter = createTRPCRouter({
         score: z.number().min(0).max(100),
         feedback: z.record(z.any()), // AI反馈的JSON对象
         canProgress: z.boolean(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const assessment = await ctx.db.assessment.create({
@@ -51,7 +48,7 @@ export const assessmentRouter = createTRPCRouter({
           if (progress) {
             const unlockedChapters = progress.unlockedChapters;
             const nextChapter = chapter.chapterNumber + 1;
-            
+
             if (!unlockedChapters.includes(nextChapter)) {
               await ctx.db.userCourseProgress.update({
                 where: {
@@ -78,7 +75,7 @@ export const assessmentRouter = createTRPCRouter({
       z.object({
         chapterId: z.string().optional(),
         courseId: z.string().optional(),
-      })
+      }),
     )
     .query(async ({ ctx, input }) => {
       const where: {

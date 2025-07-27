@@ -1,12 +1,12 @@
 // import { env } from "@/env";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
-import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
-});
+import {
+  // openaiChatModel,
+  defaultModel,
+  CHAT_GENERATION_CONFIG,
+} from "@/lib/openai";
 
 export async function POST(req: Request) {
   try {
@@ -16,12 +16,13 @@ export async function POST(req: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const { chapterId, courseTitle, chapterTitle, level } = await req.json() as {
-      chapterId: string;
-      courseTitle: string;
-      chapterTitle: string;
-      level: string;
-    };
+    const { chapterId, courseTitle, chapterTitle, level } =
+      (await req.json()) as {
+        chapterId: string;
+        courseTitle: string;
+        chapterTitle: string;
+        level: string;
+      };
 
     // 验证章节存在且用户有权限
     const chapter = await db.chapter.findUnique({
@@ -95,7 +96,7 @@ export async function POST(req: Request) {
 请严格按照以下结构组织内容：
 
 1.  **引言 (Introduction)**
-    * 承上启下：简要回顾上一章的核心要点，并说明它与本章的联系。
+    * 承上启下：简要回顾上一章的核心要点，并说明它与本章的联系（如果当前是第一章，则不需要）。
     * 学习目标：清晰地列出学习完本章后，学生将能够做什么（e.g., "你将能够解释...", "你将能够使用...", "你将能够分析..."）。
     * 本章概览：简要介绍本章将要涵盖的主要知识点，引起学生的兴趣。
 
@@ -122,10 +123,9 @@ export async function POST(req: Request) {
 `;
 
     const result = streamText({
-      model: openai(process.env.OPENAI_MODEL ?? "gpt-4o"),
+      model: defaultModel,
       prompt,
-      temperature: 0.7,
-      maxTokens: 16000,
+      ...CHAT_GENERATION_CONFIG,
       onFinish: async (event: { text: string }) => {
         try {
           await db.chapter.update({

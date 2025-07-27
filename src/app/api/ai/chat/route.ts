@@ -1,11 +1,11 @@
-import { createOpenAI } from "@ai-sdk/openai";
 import { streamText } from "ai";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
-const openai = createOpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  baseURL: process.env.OPENAI_BASE_URL,
-});
+import {
+  openaiChatModel,
+  defaultModel,
+  CHAT_GENERATION_CONFIG,
+} from "@/lib/openai";
 export async function POST(req: Request) {
   try {
     const session = await auth();
@@ -120,7 +120,7 @@ export async function POST(req: Request) {
     //     }
 
     const result = streamText({
-      model: openai(process.env.OPENAI_MODEL ?? "gpt-4o"),
+      model: defaultModel,
       messages: [
         {
           role: "system" as const,
@@ -128,8 +128,7 @@ export async function POST(req: Request) {
         },
         ...(messages as Array<{ role: "user" | "assistant"; content: string }>),
       ],
-      temperature: 0.7,
-      maxTokens: 16000,
+      ...CHAT_GENERATION_CONFIG,
     });
 
     return result.toDataStreamResponse();

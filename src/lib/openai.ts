@@ -43,6 +43,10 @@ switch (process.env.DEFAULT_MODEL) {
   case "openai":
     defaultModel = openaiModel;
     break;
+  case "zhipu":
+    console.log("zhipu");
+    defaultModel = zhipuModel;
+    break;
   default:
     defaultModel = openaiModel;
 }

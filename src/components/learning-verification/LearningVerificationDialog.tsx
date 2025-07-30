@@ -1,10 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,7 +13,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
 import {} from "@/components/ui/scroll-area";
 import {
   BookOpen,
@@ -73,12 +69,10 @@ export function LearningVerificationDialog({
     setAssessmentResult,
     setError,
     toggleHints,
-    incrementRetry,
     resetChapter,
   } = useLearningVerificationStore();
 
   const selectors = useLearningVerificationSelectors();
-  const { updatePoints } = usePointsStore();
 
   // API hooks
   const getOrGenerateQuestions =
@@ -96,7 +90,7 @@ export function LearningVerificationDialog({
   // 初始化问题
   useEffect(() => {
     const initializeQuestions = async () => {
-      if (!chapterId) return;
+      if (!chapterId && !open) return;
 
       // 切换章节时先清理之前的状态
       resetChapter();
@@ -105,6 +99,7 @@ export function LearningVerificationDialog({
       try {
         // 获取或生成问题（后端会自动判断是否需要生成）
         const questionsResult = await getOrGenerateQuestions.refetch();
+        console.log("questionsResult", questionsResult);
         if (questionsResult.data && questionsResult.data.length > 0) {
           setCurrentQuestions(questionsResult.data);
 
@@ -161,7 +156,7 @@ export function LearningVerificationDialog({
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     initializeQuestions();
-  }, [chapterId]); // 只依赖 chapterId
+  }, [chapterId, open]); // 只依赖 chapterId
 
   // 评估所有答案
   const handleEvaluateAll = useCallback(async () => {
@@ -250,13 +245,8 @@ export function LearningVerificationDialog({
 
   // 处理重新答题
   const handleRetry = useCallback(() => {
-    setAssessmentResult(null);
     setShowAssessmentResult(false);
-    // 重置所有答案的评估状态，允许重新作答
-    Object.keys(userAnswers).forEach((questionId) => {
-      updateUserAnswer(questionId, userAnswers[questionId]?.answer ?? "");
-    });
-  }, [setAssessmentResult, userAnswers, updateUserAnswer]);
+  }, [setShowAssessmentResult]);
 
   const currentQuestion = selectors.currentQuestion;
   const currentAnswer = selectors.currentAnswer;
@@ -439,7 +429,10 @@ export function LearningVerificationDialog({
                         </div>
 
                         {/* 问题内容区域 */}
-                        <div className="rounded-xl border border-gray-200 bg-white">
+                        <div
+                          style={{ minWidth: "30vw" }}
+                          className="min-w-[50vw] rounded-xl border border-gray-200 bg-white"
+                        >
                           <SocraticQuestion
                             question={currentQuestion}
                             answer={currentAnswer}

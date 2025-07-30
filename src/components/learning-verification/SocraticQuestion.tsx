@@ -76,7 +76,7 @@ export function SocraticQuestion({
   const isAnswered = evaluation !== undefined;
 
   return (
-    <div className="max-h-[70vh] space-y-6 overflow-auto p-6">
+    <div className="max-h-[70vh] min-w-[60vw] space-y-6 overflow-auto p-6">
       {/* 问题卡片 */}
       <Card className="border-0 shadow-none">
         <CardHeader className="space-y-4">
@@ -166,7 +166,7 @@ export function SocraticQuestion({
               onChange={(e) => onAnswerChange(e.target.value)}
               placeholder="请深入思考并详细回答这个问题。建议至少写50字以上，展示您的思考过程..."
               className={cn(
-                "min-h-[120px] resize-none transition-all duration-200",
+                "min-h-[120px] w-full resize-none transition-all duration-200",
                 evaluation &&
                   evaluation.isCorrect &&
                   "border-green-300 bg-green-50",

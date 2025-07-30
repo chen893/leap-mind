@@ -194,6 +194,7 @@ export function LearningVerificationDialog({
 
       // 显示评估完成提示
       if (result.canProgress) {
+        onComplete?.(true);
         toast.success(
           `🎉 评估完成！平均分数：${result.totalScore}分，获得${result.pointsEarned}积分，下一章节已解锁！`,
         );
@@ -288,7 +289,7 @@ export function LearningVerificationDialog({
 
           {/* 固定顶部标题栏 */}
 
-          <div className="flex max-w-[70vw] flex-1 flex-col">
+          <div className="flex flex-1 flex-col">
             <>
               <div className="space-y-6 p-6">
                 {isLoading ? (
@@ -436,7 +437,7 @@ export function LearningVerificationDialog({
 
                         {/* 问题内容区域 */}
                         <div
-                          style={{ minWidth: "30vw" }}
+                          style={{ minWidth: "50vw" }}
                           className="rounded-xl border border-gray-200 bg-white"
                         >
                           <SocraticQuestion

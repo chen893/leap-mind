@@ -73,20 +73,9 @@ export function SocraticQuestion({
   const isAnswered = evaluation !== undefined;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      {/* 进度条 */}
-      <div className="space-y-2">
-        <div className="text-muted-foreground flex items-center justify-between text-sm">
-          <span>
-            问题 {questionIndex + 1} / {totalQuestions}
-          </span>
-          <span>{Math.round(progress)}% 完成</span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-
+    <div className="max-h-[70vh] space-y-6 overflow-auto p-6">
       {/* 问题卡片 */}
-      <Card className="border-2">
+      <Card className="border-0 shadow-none">
         <CardHeader className="space-y-4">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">深度思考问题</CardTitle>
@@ -182,7 +171,6 @@ export function SocraticQuestion({
                   evaluation.isCorrect === false &&
                   "border-red-300 bg-red-50",
               )}
-              disabled={isEvaluating || evaluation !== undefined}
             />
             <div className="text-muted-foreground flex items-center justify-between text-xs">
               <span>最少10个字符</span>
@@ -273,21 +261,29 @@ export function SocraticQuestion({
             </Card>
           )}
 
-          {/* 操作按钮 */}
-          <div className="flex items-center justify-between pt-4">
+          {/* 操作按钮 - 优化布局 */}
+          <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+            {/* 左侧：导航按钮 */}
             <div className="flex items-center gap-2">
               {onPrevious && questionIndex > 0 && (
-                <Button variant="outline" onClick={onPrevious}>
+                <Button variant="outline" onClick={onPrevious} size="sm">
                   <ArrowLeft className="mr-1 h-4 w-4" />
                   上一题
                 </Button>
               )}
+              {onNext && questionIndex < totalQuestions - 1 && (
+                <Button variant="default" onClick={onNext} size="sm">
+                  下一题
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </Button>
+              )}
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* 右侧：状态指示 */}
+            <div className="flex items-center gap-3">
               {/* 答案状态指示 */}
               {hasAnswer && !evaluation && (
-                <div className="flex items-center gap-2 text-sm text-green-600">
+                <div className="flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-sm text-green-700">
                   <CheckCircle className="h-4 w-4" />
                   <span>已填写</span>
                 </div>
@@ -297,8 +293,10 @@ export function SocraticQuestion({
               {evaluation && (
                 <div
                   className={cn(
-                    "flex items-center gap-2 text-sm",
-                    evaluation.isCorrect ? "text-green-600" : "text-orange-600",
+                    "flex items-center gap-2 rounded-full px-3 py-1 text-sm",
+                    evaluation.isCorrect
+                      ? "bg-green-50 text-green-700"
+                      : "bg-orange-50 text-orange-700",
                   )}
                 >
                   {evaluation.isCorrect ? (
@@ -308,13 +306,6 @@ export function SocraticQuestion({
                   )}
                   <span>{evaluation.isCorrect ? "已完成" : "可重新作答"}</span>
                 </div>
-              )}
-
-              {onNext && questionIndex < totalQuestions - 1 && (
-                <Button variant="default" onClick={onNext}>
-                  下一题
-                  <ArrowRight className="ml-1 h-4 w-4" />
-                </Button>
               )}
             </div>
           </div>

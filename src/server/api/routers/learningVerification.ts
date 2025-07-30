@@ -4,8 +4,12 @@ import {
   protectedProcedure,
   type TRPCContext,
 } from "@/server/api/trpc";
-import { generateChapterQuestions, evaluateAnswer, evaluateAnswersBatch } from "@/lib/course-ai";
+import {
+  generateChapterQuestions,
+  evaluateAnswersBatch,
+} from "@/lib/course-ai";
 import { type PointsReason } from "@prisma/client";
+import { evaluateAnswer } from "@/lib/course-ai";
 import {
   type EvaluationResult,
   type AssessmentFeedback,
@@ -26,8 +30,6 @@ export const learningVerificationRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
-      console.log("getOrGenerateQuestions===", input.chapterId);
-
       // 验证章节存在且用户有权限
       const chapter = await ctx.db.chapter.findUnique({
         where: { id: input.chapterId },
@@ -72,14 +74,11 @@ export const learningVerificationRouter = createTRPCRouter({
 
       // 如果已有问题，直接返回
       if (existingQuestions.length > 0) {
-        console.log("Found existing questions:", existingQuestions.length);
         return existingQuestions;
       }
 
       // 如果没有问题，则生成新问题
       try {
-        console.log("Generating new questions for chapter:", input.chapterId);
-
         // 调用AI生成问题
         const aiQuestions = await generateChapterQuestions({
           courseTitle: chapter.course.title,
@@ -87,8 +86,6 @@ export const learningVerificationRouter = createTRPCRouter({
           chapterContent: chapter.contentMd ?? "",
           level: "intermediate" as const,
         });
-
-        console.log("Generated AI questions:", aiQuestions.questions.length);
 
         // 保存问题到数据库
         const savedQuestions = await Promise.all(
@@ -115,7 +112,6 @@ export const learningVerificationRouter = createTRPCRouter({
           ),
         );
 
-        console.log("Saved questions to database:", savedQuestions.length);
         return savedQuestions;
       } catch (error) {
         console.error("Failed to generate questions:", error);
@@ -127,7 +123,6 @@ export const learningVerificationRouter = createTRPCRouter({
   getQuestions: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .query(async ({ ctx, input }) => {
-      console.log("getQuestions===", input.chapterId);
       const questions = await ctx.db.chapterQuestion.findMany({
         where: { chapterId: input.chapterId },
         orderBy: { questionNumber: "asc" },
@@ -139,7 +134,6 @@ export const learningVerificationRouter = createTRPCRouter({
           },
         },
       });
-      console.log("questions", questions);
       return questions;
     }),
 
@@ -316,8 +310,8 @@ export const learningVerificationRouter = createTRPCRouter({
 
       // 准备批量评估数据
       const questionsAndAnswers = questions
-        .filter(question => input.answers[question.id])
-        .map(question => ({
+        .filter((question) => input.answers[question.id])
+        .map((question) => ({
           questionId: question.id,
           question: question.questionText,
           userAnswer: input.answers[question.id]!,
@@ -335,7 +329,9 @@ export const learningVerificationRouter = createTRPCRouter({
 
         // 处理评估结果
         for (const evaluation of batchEvaluation.evaluations) {
-          const question = questions.find(q => q.id === evaluation.questionId);
+          const question = questions.find(
+            (q) => q.id === evaluation.questionId,
+          );
           if (!question) continue;
 
           const answerText = input.answers[question.id]!;
@@ -477,8 +473,25 @@ export const learningVerificationRouter = createTRPCRouter({
         },
         orderBy: { createdAt: "desc" },
       });
-
-      return assessment;
+      if (!assessment?.feedbackJson) {
+        return null;
+      }
+      // return assessment;
+      console.log(
+        "assessment?.feedbackJson",
+        typeof assessment?.feedbackJson,
+        assessment?.feedbackJson,
+      );
+      // const passRate = JSON.parse(assessment?.feedbackJson)?.passRate;
+      const passRate = (assessment?.feedbackJson as { passRate: number })
+        .passRate;
+      return {
+        canProgress: assessment?.canProgress,
+        totalScore: assessment?.score,
+        pointsEarned: assessment?.pointsEarned,
+        feedback: `您的平均分数为 ${assessment?.score}，通过率为 ${Math.round(passRate * 100)}%`,
+        evaluationResults: assessment?.userAnswersJson,
+      };
     }),
 });
 

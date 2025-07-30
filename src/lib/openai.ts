@@ -18,35 +18,36 @@ export const googleModel = google(
   // { structuredOutputs: false },
 );
 
-const OPENAI_BASE_URL = "https://open.bigmodel.cn/api/paas/v4";
-const OPENAI_API_KEY = "ce987760088e686a0ba9c04cfa145e84.QfeXctDIQwSINDuu";
-const OPENAI_MODEL = "glm-4.5";
 const zhipu = createOpenAI({
-  apiKey: OPENAI_API_KEY,
-  baseURL: OPENAI_BASE_URL,
+  apiKey: process.env.ZHIPU_API_KEY,
+  baseURL: process.env.ZHIPU_BASE_URL,
   fetch: async (url, options) => {
     const newOption = { ...options } as unknown as { body: string };
-    console.log("URL", url);
-    console.log("Headers", JSON.stringify(options!.headers, null, 2));
-    // console.log(
-    //   `Body ${JSON.stringify(
-    //     JSON.parse(options.body as unknown as string),
-    //     null,
-    //     2,
-    //   )}`,
-    // );
+
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const body = JSON.parse(newOption.body, null, 2);
+    const body = JSON.parse(newOption.body);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     delete body?.tool_choice;
-    console.log(body);
     newOption.body = JSON.stringify(body);
     return await fetch(url, newOption);
   },
 });
-export const zhipuModel = zhipu(OPENAI_MODEL);
-export const defaultModel = zhipuModel;
-// process.env.DEFAULT_MODEL === "google" ? googleModel : openaiModel;
+export const zhipuModel = zhipu(process.env.ZHIPU_MODEL ?? "gpt-4o");
+
+let defaultModel = openaiModel;
+
+switch (process.env.DEFAULT_MODEL) {
+  case "google":
+    defaultModel = googleModel;
+    break;
+  case "openai":
+    defaultModel = openaiModel;
+    break;
+  default:
+    defaultModel = openaiModel;
+}
+
+export { defaultModel };
 // 统一的生成参数配置
 export const DEFAULT_GENERATION_CONFIG = {
   temperature: 0.7,

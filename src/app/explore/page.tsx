@@ -48,13 +48,13 @@ export default function ExplorePage() {
   const handleLoadMore = async () => {
     try {
       await fetchNextPage();
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         title: "加载失败",
         description: "无法加载更多课程，请稍后重试",
         variant: "destructive",
       });
-      throw error;
+      console.error("Failed to load more courses:", error);
     }
   };
 

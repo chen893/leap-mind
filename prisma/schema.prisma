@@ -58,6 +58,9 @@ model User {
     createdCourses   Course[]             @relation("CourseCreator")
     courseProgresses UserCourseProgress[]
     assessments      Assessment[]
+    questionAnswers  UserQuestionAnswer[]
+    userPoints       UserPoints?
+    achievements     UserAchievement[]
 }
 
 model VerificationToken {
@@ -104,8 +107,9 @@ model Chapter {
     createdAt           DateTime @default(now())
 
     // Relations
-    course      Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+    course      Course            @relation(fields: [courseId], references: [id], onDelete: Cascade)
     assessments Assessment[]
+    questions   ChapterQuestion[]
 
     @@unique([courseId, chapterNumber])
     @@index([courseId])
@@ -130,7 +134,125 @@ model UserCourseProgress {
     @@index([courseId])
 }
 
-// 评估记录模型
+// 章节问题模型（苏格拉底式问答）
+model ChapterQuestion {
+    id               String           @id @default(cuid())
+    chapterId        String
+    questionNumber   Int // 问题序号 1-5
+    questionText     String           @db.Text
+    questionType     QuestionType     @default(OPEN_ENDED)
+    questionCategory QuestionCategory @default(SOCRATIC) // 问题分类
+    difficulty       Difficulty       @default(MEDIUM) // 问题难度
+    hints            String[]         @default([]) // 提示信息
+    options          Json? // 选择题选项（可选）
+    createdAt        DateTime         @default(now())
+    updatedAt        DateTime         @updatedAt
+
+    // Relations
+    chapter     Chapter              @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+    userAnswers UserQuestionAnswer[]
+
+    @@unique([chapterId, questionNumber])
+    @@index([chapterId])
+}
+
+// 用户问题回答模型
+model UserQuestionAnswer {
+    id         String   @id @default(cuid())
+    userId     String
+    questionId String
+    answer     String   @db.Text
+    aiScore    Int? // AI评分 0-100
+    aiFeedback String?  @db.Text // AI反馈
+    isCorrect  Boolean? // 是否正确/通过
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    // Relations
+    user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    question ChapterQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, questionId])
+    @@index([userId])
+    @@index([questionId])
+}
+
+// 用户积分模型
+model UserPoints {
+    id             String    @id @default(cuid())
+    userId         String    @unique
+    totalPoints    Int       @default(0)
+    level          Int       @default(1)
+    currentExp     Int       @default(0)
+    expToNextLevel Int       @default(100)
+    streak         Int       @default(0) // 连续学习天数
+    lastActiveDate DateTime?
+    createdAt      DateTime  @default(now())
+    updatedAt      DateTime  @updatedAt
+
+    // Relations
+    user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+    pointsHistory PointsHistory[]
+
+    @@index([totalPoints])
+    @@index([level])
+}
+
+// 积分历史记录
+model PointsHistory {
+    id           String       @id @default(cuid())
+    userId       String
+    pointsChange Int // 积分变化（正数为获得，负数为消耗）
+    reason       PointsReason
+    description  String?
+    relatedId    String? // 相关记录ID（如章节ID、成就ID等）
+    createdAt    DateTime     @default(now())
+
+    // Relations
+    userPoints UserPoints @relation(fields: [userId], references: [userId], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([createdAt])
+}
+
+// 成就定义模型
+model Achievement {
+    id          String              @id @default(cuid())
+    name        String
+    description String              @db.Text
+    icon        String // 图标名称
+    category    AchievementCategory
+    condition   Json // 成就条件（JSON格式）
+    points      Int // 获得积分
+    isActive    Boolean             @default(true)
+    createdAt   DateTime            @default(now())
+    updatedAt   DateTime            @updatedAt
+
+    // Relations
+    userAchievements UserAchievement[]
+
+    @@index([category])
+    @@index([isActive])
+}
+
+// 用户成就记录
+model UserAchievement {
+    id            String   @id @default(cuid())
+    userId        String
+    achievementId String
+    unlockedAt    DateTime @default(now())
+    progress      Json? // 进度信息（可选）
+
+    // Relations
+    user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+    achievement Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+    @@unique([userId, achievementId])
+    @@index([userId])
+    @@index([achievementId])
+}
+
+// 评估记录模型（保留原有功能）
 model Assessment {
     id              String   @id @default(cuid())
     chapterId       String
@@ -139,6 +261,7 @@ model Assessment {
     score           Int // 评分
     feedbackJson    Json // AI反馈
     canProgress     Boolean  @default(false) // 是否可以继续下一章
+    pointsEarned    Int      @default(0) // 本次评估获得的积分
     createdAt       DateTime @default(now())
 
     // Relations
@@ -154,4 +277,43 @@ model Assessment {
 enum CourseStatus {
     IN_PROGRESS
     COMPLETED
+}
+
+enum QuestionType {
+    OPEN_ENDED // 开放式问题
+    MULTIPLE_CHOICE // 选择题
+    TRUE_FALSE // 判断题
+    SHORT_ANSWER // 简答题
+}
+
+enum QuestionCategory {
+    SOCRATIC // 苏格拉底式问题
+    REFLECTION // 反思性问题
+    APPLICATION // 应用性问题
+}
+
+enum Difficulty {
+    EASY // 简单
+    MEDIUM // 中等
+    HARD // 困难
+}
+
+enum PointsReason {
+    CHAPTER_COMPLETION // 完成章节
+    PERFECT_SCORE // 满分通过
+    FIRST_ATTEMPT // 首次尝试
+    STREAK_BONUS // 连续学习奖励
+    COURSE_COMPLETION // 完成课程
+    ACHIEVEMENT_UNLOCK // 解锁成就
+    DAILY_LOGIN // 每日登录
+    QUALITY_ANSWER // 高质量回答
+}
+
+enum AchievementCategory {
+    LEARNING // 学习相关
+    STREAK // 连续学习
+    COMPLETION // 完成相关
+    QUALITY // 质量相关
+    SOCIAL // 社交相关
+    MILESTONE // 里程碑
 }

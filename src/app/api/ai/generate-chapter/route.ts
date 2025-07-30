@@ -136,31 +136,6 @@ export async function POST(req: Request) {
               lastUpdated: new Date(),
             },
           });
-          const progress = await db.userCourseProgress.findUnique({
-            where: {
-              userId_courseId: {
-                userId: session.user.id,
-                courseId: chapter.courseId,
-              },
-            },
-          });
-          if (progress) {
-            const unlockedChapters = progress.unlockedChapters;
-            const nextChapter = chapter.chapterNumber + 1;
-            if (!unlockedChapters.includes(nextChapter)) {
-              await db.userCourseProgress.update({
-                where: {
-                  userId_courseId: {
-                    userId: session.user.id,
-                    courseId: chapter.courseId,
-                  },
-                },
-                data: {
-                  unlockedChapters: [...unlockedChapters, nextChapter],
-                },
-              });
-            }
-          }
         } catch (error) {
           console.error("Failed to save chapter content:", error);
         }

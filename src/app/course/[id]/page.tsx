@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useEffect } from "react";
 import { Navbar } from "@/components/navbar";
 import { api } from "@/trpc/react";
 import { CourseHeader } from "@/components/course-header";
@@ -10,12 +10,15 @@ import { ChapterList } from "@/components/chapter-list";
 import { CourseContentArea } from "@/components/course-content-area";
 import { CourseLoadingState } from "@/components/course-loading-state";
 import { CourseNotFound } from "@/components/course-not-found";
-
+import { useCourseStore } from "@/store/course-store";
 export default function CoursePage() {
   const params = useParams();
   const courseId = params.id as string;
-  const [selectedChapter, setSelectedChapter] = useState(1);
   const { data: session } = useSession();
+
+  // Zustand store
+  const { selectedChapterNumber, setSelectedChapterByNumber, reset } =
+    useCourseStore();
 
   const {
     data: course,
@@ -25,10 +28,34 @@ export default function CoursePage() {
   const { data: userCourses, refetch: refetchUserCourses } =
     api.course.getUserCourses.useQuery();
 
+  // 初始化选中第一章
+  useEffect(() => {
+    if (
+      course &&
+      course.chapters.length > 0 &&
+      selectedChapterNumber === null
+    ) {
+      setSelectedChapterByNumber(1, course.chapters);
+    }
+  }, [course, selectedChapterNumber, setSelectedChapterByNumber]);
+
+  // 组件卸载时重置状态
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
+
   const userProgress = userCourses?.find((p) => p.course.id === courseId);
   const unlockedChapters = userProgress?.unlockedChapters ?? [1];
   const isCreator = session?.user?.id === course?.creatorId;
-
+  const selectNextChapter = async () => {
+    await refetchUserCourses();
+    setSelectedChapterByNumber(
+      (selectedChapterNumber ?? 1) + 1,
+      course!.chapters,
+    );
+  };
   if (isLoading) {
     return <CourseLoadingState />;
   }
@@ -38,10 +65,10 @@ export default function CoursePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex h-screen flex-col bg-gray-50">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto flex flex-1 flex-col px-4 py-6">
         <CourseHeader
           course={course}
           userProgress={userProgress}
@@ -49,23 +76,29 @@ export default function CoursePage() {
           onCourseUpdate={refetch}
         />
 
-        <div className="grid lg:grid-cols-4 gap-6">
+        <div className="grid min-h-0 flex-1 gap-6 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <ChapterList
-              chapters={course.chapters}
-              selectedChapter={selectedChapter}
-              unlockedChapters={unlockedChapters}
-              onChapterSelect={setSelectedChapter}
-            />
+            {selectedChapterNumber !== null && (
+              <ChapterList
+                chapters={course.chapters}
+                selectedChapterNumber={selectedChapterNumber}
+                unlockedChapters={unlockedChapters}
+                onChapterSelect={(chapterNumber) =>
+                  setSelectedChapterByNumber(chapterNumber, course.chapters)
+                }
+              />
+            )}
           </div>
 
           <div className="lg:col-span-3">
-            <CourseContentArea
-              courseId={courseId}
-              selectedChapter={selectedChapter}
-              unlockedChapters={unlockedChapters}
-              onRefetchUserCourses={refetchUserCourses}
-            />
+            {selectedChapterNumber !== null && (
+              <CourseContentArea
+                courseId={courseId}
+                selectedChapterNumber={selectedChapterNumber}
+                unlockedChapters={unlockedChapters}
+                selectNextChapter={selectNextChapter}
+              />
+            )}
           </div>
         </div>
       </div>

@@ -15,7 +15,7 @@ export interface CourseHeaderProps {
 
 export interface ChapterListProps {
   chapters: Chapter[];
-  selectedChapter: number;
+  selectedChapter: Chapter;
   unlockedChapters: number[];
   onChapterSelect: (chapterNumber: number) => void;
 }

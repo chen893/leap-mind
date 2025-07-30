@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { updateUserPoints } from "@/server/api/routers/learningVerification";
 
 export const assessmentRouter = createTRPCRouter({
   // 提交评估答案
@@ -7,10 +8,26 @@ export const assessmentRouter = createTRPCRouter({
     .input(
       z.object({
         chapterId: z.string(),
-        answers: z.record(z.any()), // 用户答案的JSON对象
+        answers: z.record(
+          z.string(),
+          z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]),
+        ), // 用户答案的JSON对象
         score: z.number().min(0).max(100),
-        feedback: z.record(z.any()), // AI反馈的JSON对象
+        feedback: z.record(
+          z.string(),
+          z.union([
+            z.string(),
+            z.number(),
+            z.boolean(),
+            z.object({
+              score: z.number().optional(),
+              comment: z.string().optional(),
+              suggestions: z.array(z.string()).optional(),
+            }),
+          ]),
+        ), // AI反馈的JSON对象
         canProgress: z.boolean(),
+        pointsEarned: z.number().optional().default(0),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -22,6 +39,7 @@ export const assessmentRouter = createTRPCRouter({
           score: input.score,
           feedbackJson: input.feedback,
           canProgress: input.canProgress,
+          pointsEarned: input.pointsEarned,
         },
       });
 
@@ -63,6 +81,16 @@ export const assessmentRouter = createTRPCRouter({
               });
             }
           }
+        }
+
+        // 如果通过评估且有积分奖励，更新用户积分
+        if (input.pointsEarned > 0) {
+          await updateUserPoints(
+            ctx,
+            input.pointsEarned,
+            "CHAPTER_COMPLETION",
+            input.chapterId,
+          );
         }
       }
 

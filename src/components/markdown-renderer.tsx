@@ -42,7 +42,6 @@ export function Mermaid(props: { code: string }) {
           console.error("[Mermaid] ", e.message);
         });
     }
-     
   }, [props.code]);
 
   function viewSvgInNewWindow() {
@@ -100,16 +99,13 @@ export function PreCode(props: { children: React.ReactNode }) {
     }
   }, 600);
 
-  const enableArtifacts =
-  false;
-    // session.mask?.enableArtifacts !== false ;
+  const enableArtifacts = false;
+  // session.mask?.enableArtifacts !== false ;
 
   //Wrap the paragraph for plain-text
   useEffect(() => {
     if (ref.current) {
-      const codeElements = ref.current.querySelectorAll(
-        "code",
-      );
+      const codeElements = ref.current.querySelectorAll("code");
       const wrapLanguages = [
         "",
         "md",
@@ -122,7 +118,7 @@ export function PreCode(props: { children: React.ReactNode }) {
       ];
       codeElements.forEach((codeElement) => {
         const languageClass = /language-(\w+)/.exec(codeElement.className);
-        const name = languageClass ? languageClass[1] ?? '' : "";
+        const name = languageClass ? (languageClass[1] ?? "") : "";
         if (wrapLanguages.includes(name)) {
           codeElement.style.whiteSpace = "pre-wrap";
         }
@@ -180,7 +176,7 @@ export function PreCode(props: { children: React.ReactNode }) {
 //   // const session = chatStore.currentSession();
 //   // const config = useAppConfig();
 //   const enableCodeFold =
-//     // 
+//     //
 //     false;
 
 //   const ref = useRef<HTMLPreElement>(null);
@@ -236,7 +232,12 @@ function escapeBrackets(text: string) {
     /(```[\s\S]*?```|`.*?`)|\\\[([\s\S]*?[^\\])\\\]|\\\((.*?)\\\)/g;
   return text.replace(
     pattern,
-    (match: string, codeBlock: string, squareBracket: string, roundBracket: string): string => {
+    (
+      match: string,
+      codeBlock: string,
+      squareBracket: string,
+      roundBracket: string,
+    ): string => {
       if (codeBlock) {
         return codeBlock;
       } else if (squareBracket) {
@@ -272,82 +273,81 @@ function tryWrapHtmlCode(text: string) {
 
 // const debounceSetContent = useDebouncedCallback
 
-function MarkDownContentInternal(props: { content: string, isBottom: boolean  }) {
+function MarkDownContentInternal(props: {
+  content: string;
+  isBottom: boolean;
+}) {
   const [escapedContent, setEscapedContent] = useState(props.content);
 
-  const time = useRef<number>((Date.now()));
+  const time = useRef<number>(Date.now());
   // 是否滚到底部
   useEffect(() => {
     const currentTime = Date.now();
     if (currentTime - time.current < 500) {
       // time.current = currentTime;
-      return ;
-    }else {
+      return;
+    } else {
       time.current = currentTime;
       requestAnimationFrame(() => {
-
         if (props.isBottom) {
           document.getElementById("mdBottom")?.scrollIntoView({
             behavior: "smooth",
           });
         }
         setEscapedContent(tryWrapHtmlCode(escapeBrackets(props.content)));
-      })
+      });
     }
-
-  }, [props.content, props.isBottom])
+  }, [props.content, props.isBottom]);
   // const escapedContent = useMemo(() => {
 
-  //   const debouncedContent = 
+  //   const debouncedContent =
   //   return tryWrapHtmlCode(escapeBrackets(props.content));
   // }, [props.content]);
 
   return (
     <>
-        <ReactMarkdown
-
-      remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
-      rehypePlugins={[
-        RehypeKatex,
-        [
-          RehypeHighlight,
-          {
-            detect: false,
-            ignoreMissing: true,
+      <ReactMarkdown
+        remarkPlugins={[RemarkMath, RemarkGfm, RemarkBreaks]}
+        rehypePlugins={[
+          RehypeKatex,
+          [
+            RehypeHighlight,
+            {
+              detect: false,
+              ignoreMissing: true,
+            },
+          ],
+        ]}
+        components={{
+          // pre: PreCode,
+          // code: CustomCode,
+          p: (pProps) => <p {...pProps} dir="auto" />,
+          a: (aProps) => {
+            const href = aProps.href ?? "";
+            if (/\.(aac|mp3|opus|wav)$/.test(href)) {
+              return (
+                <figure>
+                  <audio controls src={href}></audio>
+                </figure>
+              );
+            }
+            if (/\.(3gp|3g2|webm|ogv|mpeg|mp4|avi)$/.test(href)) {
+              return (
+                <video controls width="99.9%">
+                  <source src={href} />
+                </video>
+              );
+            }
+            const isInternal = /^\/#/i.test(href);
+            const target = isInternal ? "_self" : (aProps.target ?? "_blank");
+            return <a {...aProps} target={target} />;
           },
-        ],
-      ]}
-      components={{
-        // pre: PreCode,
-        // code: CustomCode,
-        p: (pProps) => <p {...pProps} dir="auto" />,
-        a: (aProps) => {
-          const href = aProps.href ?? "";
-          if (/\.(aac|mp3|opus|wav)$/.test(href)) {
-            return (
-              <figure>
-                <audio controls src={href}></audio>
-              </figure>
-            );
-          }
-          if (/\.(3gp|3g2|webm|ogv|mpeg|mp4|avi)$/.test(href)) {
-            return (
-              <video controls width="99.9%">
-                <source src={href} />
-              </video>
-            );
-          }
-          const isInternal = /^\/#/i.test(href);
-          const target = isInternal ? "_self" : (aProps.target ?? "_blank");
-          return <a {...aProps} target={target} />;
-        },
-      }}
-    >
-      {escapedContent}
-    </ReactMarkdown>
-    <div id="mdBottom"></div>
+        }}
+      >
+        {escapedContent}
+      </ReactMarkdown>
+      <div id="mdBottom"></div>
     </>
-
   );
 }
 
@@ -367,10 +367,9 @@ export function Markdown(
   const [isBottom, setIsBottom] = useState(true);
   return (
     <div
-      className="markdown-body max-h-[calc(100vh-450px)] overflow-auto"
-
+      className="markdown-body"
       onWheel={(event) => {
-        if (event.deltaY<0) {
+        if (event.deltaY < 0) {
           setIsBottom(false);
         }
       }}
@@ -385,10 +384,9 @@ export function Markdown(
     >
       {props.loading ? (
         // <LoadingIcon />
-      <div>加载中</div>
+        <div>加载中</div>
       ) : (
-        <MarkdownContent       isBottom={isBottom}
- content={props.content} />
+        <MarkdownContent isBottom={isBottom} content={props.content} />
       )}
     </div>
   );

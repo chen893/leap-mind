@@ -15,19 +15,12 @@ import { useCompletion } from "@ai-sdk/react";
 import { BookOpen, Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { Markdown } from "./markdown-renderer";
-
-interface ChapterContentProps {
-  courseId: string;
-  chapterNumber: number;
-  isUnlocked: boolean;
-  refetchSideChapters: () => void;
-}
+import type { ChapterContentProps } from "@/types/components";
 
 export function ChapterContent({
   courseId,
   chapterNumber,
   isUnlocked,
-  refetchSideChapters,
 }: ChapterContentProps) {
   const { toast } = useToast();
 
@@ -38,7 +31,7 @@ export function ChapterContent({
         course?.chapters.find((c) => c.chapterNumber === chapterNumber)?.id ??
         "",
     },
-    { enabled: !!course && isUnlocked }
+    { enabled: !!course && isUnlocked },
   );
 
   const {
@@ -64,7 +57,6 @@ export function ChapterContent({
       void setTimeout(() => {
         console.log("refetch");
         void refetch();
-        refetchSideChapters?.();
       }, 3000);
     },
   });
@@ -100,7 +92,7 @@ export function ChapterContent({
       <Card>
         <CardContent className="flex flex-col items-center justify-center py-12">
           <BookOpen className="mb-4 h-12 w-12 text-gray-400" />
-          <h3 className="mb-2 font-medium text-gray-900 text-lg">章节未解锁</h3>
+          <h3 className="mb-2 text-lg font-medium text-gray-900">章节未解锁</h3>
           <p className="text-center text-gray-600">
             完成前面的章节学习后即可解锁此内容
           </p>
@@ -155,13 +147,13 @@ export function ChapterContent({
         </div>
       </CardHeader>
 
-      <CardContent className="">
+      <CardContent className="max-h-[40vh] overflow-auto">
         {contentMd ? (
           <Markdown key={courseId + "-" + count.current} content={contentMd} />
         ) : (
           <div className="py-12 text-center">
             <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-            <h3 className="mb-2 font-medium text-gray-900 text-lg">
+            <h3 className="mb-2 text-lg font-medium text-gray-900">
               准备开始学习
             </h3>
             <p className="mb-4 text-gray-600">

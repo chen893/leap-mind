@@ -1,344 +1,826 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <script src="https://cdn.tailwindcss.com"></script>
-
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
-
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-  <style type="text/tailwindcss">
-    @theme {
-        --color-clifford: #da373d;
-        --color-space: #0f172a;
-        --color-neon: #38bdf8;
-        --color-explosion: #f97316;
-      }
-      
-      @keyframes pulse-glow {
-        0%, 100% { opacity: 0.8; transform: scale(1); }
-        50% { opacity: 1; transform: scale(1.05); }
-      }
-      
-      .glow {
-        @extend pulse-glow;
-        animation: pulse-glow 2s infinite;
-      }
-      
-      .ship {
-        background: linear-gradient(45deg, #38bdf8, #0ea5e9);
-        box-shadow: 0 0 10px #38bdf8, 0 0 20px #0ea5e9;
-      }
-      
-      .bullet {
-        background: linear-gradient(to bottom, #38bdf8, #0ea5e9);
-        box-shadow: 0 0 5px #38bdf8;
-      }
-      
-      .enemy {
-        background: linear-gradient(to bottom, #f97316, #f43f5e);
-        box-shadow: 0 0 10px #f97316;
-      }
-    </style>
-</head>
-
-<body class="bg-[var(--color-space)] min-h-screen text-white">
-  <div id="app"></div>
-
-  <script type="text/babel">
-    const { useState, useEffect, useRef } = React;
-
-    function App() {
-      const [gameStarted, setGameStarted] = useState(false);
-      const [gameOver, setGameOver] = useState(false);
-      const [score, setScore] = useState(0);
-      const [playerPos, setPlayerPos] = useState(50);
-      const [bullets, setBullets] = useState([]);
-      const [enemies, setEnemies] = useState([]);
-      const gameAreaRef = useRef(null);
-      const lastTimeRef = useRef(0);
-      const enemySpeed = useRef(2);
-      const gameLoopRef = useRef(null);
-
-      // 启动游戏
-      const startGame = () => {
-        setGameStarted(true);
-        setGameOver(false);
-        setScore(0);
-        setBullets([]);
-        setEnemies([]);
-        enemySpeed.current = 2;
-        setTimeout(spawnEnemy, 2000);
-      };
-
-      // 敌机生成
-      const spawnEnemy = () => {
-        const randomLeft = Math.random() * 80;
-        setEnemies(prev => [...prev, {
-          id: Date.now(),
-          left: randomLeft,
-          top: -10,
-          destroyed: false
-        }]);
-
-        if (gameLoopRef.current) {
-          clearTimeout(gameLoopRef.current);
-        }
-
-        gameLoopRef.current = setTimeout(() => {
-          spawnEnemy();
-        }, Math.max(800 - score * 5, 300));
-      };
-
-      // 键盘控制
-      useEffect(() => {
-        const handleKeyDown = (e) => {
-          if (!gameStarted || gameOver) return;
-
-          if (e.key === 'ArrowLeft') {
-            setPlayerPos(prev => Math.max(0, prev - 10));
-          }
-          if (e.key === 'ArrowRight') {
-            setPlayerPos(prev => Math.min(90, prev + 10));
-          }
-          if (e.key === ' ' || e.key === 'Spacebar') {
-            shoot();
-          }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-      }, [gameStarted, gameOver]);
-
-      // 子弹发射
-      const shoot = () => {
-        setBullets(prev => [...prev, {
-          id: Date.now(),
-          top: 85,
-          left: playerPos + 2.5
-        }]);
-      };
-
-      // 碰撞检测
-      const checkCollisions = () => {
-        const updatedBullets = [...bullets];
-        const updatedEnemies = [...enemies];
-
-        // 子弹与敌机碰撞
-        updatedBullets.forEach((bullet, bIndex) => {
-          if (bullet.destroyed) return;
-
-          updatedEnemies.forEach((enemy, eIndex) => {
-            if (enemy.destroyed) return;
-
-            const bulletRect = {
-              left: bullet.left,
-              top: bullet.top,
-              right: bullet.left + 0.5,
-              bottom: bullet.top + 2
-            };
-
-            const enemyRect = {
-              left: enemy.left,
-              top: enemy.top,
-              right: enemy.left + 10,
-              bottom: enemy.top + 10
-            };
-
-            if (
-              bulletRect.left < enemyRect.right &&
-              bulletRect.right > enemyRect.left &&
-              bulletRect.top < enemyRect.bottom &&
-              bulletRect.bottom > enemyRect.top
-            ) {
-              updatedBullets[bIndex] = { ...bullet, destroyed: true };
-              updatedEnemies[eIndex] = { ...enemy, destroyed: true };
-              setScore(prev => prev + 10);
-
-              // 提高速度
-              if (score % 50 === 0 && score > 0) {
-                enemySpeed.current += 0.5;
-              }
-            }
-          });
-        });
-
-        // 玩家与敌机碰撞
-        updatedEnemies.forEach(enemy => {
-          if (enemy.destroyed) return;
-
-          if (
-            playerPos < enemy.left + 10 &&
-            playerPos + 10 > enemy.left &&
-            90 < enemy.top + 10 &&
-            95 > enemy.top
-          ) {
-            endGame();
-          }
-        });
-
-        setBullets(updatedBullets);
-        setEnemies(updatedEnemies);
-      };
-
-      // 游戏结束
-      const endGame = () => {
-        setGameOver(true);
-        if (gameLoopRef.current) {
-          clearTimeout(gameLoopRef.current);
-        }
-      };
-
-      // 游戏循环
-      useEffect(() => {
-        if (!gameStarted || gameOver) return;
-
-        let animationId;
-        let lastTime = 0;
-
-        const gameLoop = (timestamp) => {
-          if (!lastTime) lastTime = timestamp;
-          const deltaTime = timestamp - lastTime;
-
-          // 移动子弹
-          setBullets(prev => prev
-            .filter(b => !b.destroyed)
-            .map(b => ({
-              ...b,
-              top: b.top - 0.2 * (deltaTime / 16)
-            }))
-            .filter(b => b.top > 0)
-          );
-
-          // 移动敌机
-          setEnemies(prev => prev
-            .filter(e => !e.destroyed)
-            .map(e => ({
-              ...e,
-              top: e.top + (enemySpeed.current * deltaTime / 16)
-            }))
-            .filter(e => e.top < 100)
-          );
-
-          // 碰撞检测
-          checkCollisions();
-
-          lastTime = timestamp;
-          animationId = requestAnimationFrame(gameLoop);
-        };
-
-        animationId = requestAnimationFrame(gameLoop);
-
-        return () => {
-          cancelAnimationFrame(animationId);
-        };
-      }, [gameStarted, gameOver]);
-
-      return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-          {!gameStarted ? (
-            <div className="text-center space-y-4">
-              <h1 className="text-5xl font-bold mb-8 text-clifford glow">星际空战</h1>
-              <div className="space-y-2 text-lg">
-                <p>← → 移动 | 空格射击</p>
-                <p>击落敌机获取分数</p>
-              </div>
-              <button
-                onClick={startGame}
-                className="mt-8 px-8 py-3 bg-neon text-space rounded-full text-xl font-bold hover:bg-cyan-400 transition-all transform hover:scale-105"
-              >
-                开始游戏
-              </button>
-            </div>
-          ) : (
-            <div className="w-full max-w-2xl mx-auto">
-              <div className="flex justify-between mb-4">
-                <div className="text-2xl font-bold">分数: {score}</div>
-                {gameOver && (
-                  <div className="text-2xl font-bold text-red-500">游戏结束</div>
-                )}
-              </div>
-
-              <div
-                ref={gameAreaRef}
-                className="relative w-full h-96 bg-gray-800 border-4 border-neon rounded-lg overflow-hidden"
-              >
-                {/* 玩家飞机 */}
-                <div
-                  className="absolute bottom-5 w-10 h-10 ship rounded-lg transform rotate-12"
-                  style={{ left: `${playerPos}%` }}
-                >
-                  <div className="absolute top-0 left-1/2 w-1 h-4 bg-blue-300 transform -translate-x-1/2"></div>
-                </div>
-
-                {/* 子弹 */}
-                {bullets.map(bullet => (
-                  <div
-                    key={bullet.id}
-                    className="absolute w-1 h-4 bullet rounded-full"
-                    style={{
-                      left: `${bullet.left}%`,
-                      top: `${bullet.top}%`
-                    }}
-                  ></div>
-                ))}
-
-                {/* 敌机 */}
-                {enemies.map(enemy => (
-                  <div
-                    key={enemy.id}
-                    className={`absolute w-10 h-10 ${enemy.destroyed ? 'opacity-0' : 'enemy'} rounded-lg transform -rotate-12`}
-                    style={{
-                      left: `${enemy.left}%`,
-                      top: `${enemy.top}%`
-                    }}
-                  >
-                    <div className="absolute top-0 left-1/2 w-1 h-4 bg-orange-300 transform -translate-x-1/2"></div>
-                  </div>
-                ))}
-
-                {/* 背景星群 */}
-                {Array.from({ length: 50 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute bg-white rounded-full"
-                    style={{
-                      left: `${Math.random() * 100}%`,
-                      top: `${Math.random() * 100}%`,
-                      width: `${Math.random() * 2 + 1}px`,
-                      height: `${Math.random() * 2 + 1}px`,
-                      opacity: Math.random() * 0.7 + 0.3,
-                      animation: `pulse ${Math.random() * 2 + 1}s infinite`
-                    }}
-                  ></div>
-                ))}
-              </div>
-
-              {gameOver && (
-                <div className="mt-4 text-center">
-                  <div className="text-3xl font-bold mb-2 text-red-500">游戏结束</div>
-                  <div className="text-xl mb-4">得分: {score}</div>
-                  <button
-                    onClick={startGame}
-                    className="px-6 py-2 bg-neon text-space rounded-full font-bold hover:bg-cyan-400 transition-all"
-                  >
-                    重新开始
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      );
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>智谱 - 引领人工智能创新</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --secondary: #4f46e5;
+      --light: #f8fafc;
+      --dark: #1e293b;
+      --gray: #64748b;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    const container = document.getElementById('app');
-    const root = ReactDOM.createRoot(container);
-    root.render(<App />);
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    }
+
+    body {
+      color: var(--dark);
+      line-height: 1.6;
+      background-color: #fff;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 20px;
+    }
+
+    /* Header Styles */
+    header {
+      background-color: white;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--primary);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .logo i {
+      margin-right: 8px;
+    }
+
+    nav ul {
+      display: flex;
+      list-style: none;
+    }
+
+    nav ul li {
+      margin-left: 25px;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: var(--dark);
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    nav ul li a:hover {
+      color: var(--primary);
+    }
+
+    .mobile-menu-btn {
+      display: none;
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: var(--dark);
+    }
+
+    /* Hero Section */
+    .hero {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: white;
+      padding: 100px 0;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+
+    .hero p {
+      font-size: 1.25rem;
+      max-width: 700px;
+      margin: 0 auto 30px;
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 12px 30px;
+      border-radius: 30px;
+      text-decoration: none;
+      font-weight: 600;
+      transition: all 0.3s;
+      margin: 5px;
+    }
+
+    .btn-primary {
+      background-color: white;
+      color: var(--primary);
+    }
+
+    .btn-primary:hover {
+      background-color: #f1f5f9;
+      transform: translateY(-3px);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      color: white;
+      border: 2px solid white;
+    }
+
+    .btn-outline:hover {
+      background-color: white;
+      color: var(--primary);
+      transform: translateY(-3px);
+    }
+
+    /* Features Section */
+    .features {
+      padding: 80px 0;
+      background-color: var(--light);
+    }
+
+    .section-title {
+      text-align: center;
+      margin-bottom: 50px;
+    }
+
+    .section-title h2 {
+      font-size: 2.5rem;
+      margin-bottom: 15px;
+      color: var(--dark);
+    }
+
+    .section-title p {
+      color: var(--gray);
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+    }
+
+    .feature-card {
+      background-color: white;
+      border-radius: 10px;
+      padding: 30px;
+      box-shadow: var(--shadow);
+      text-align: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-10px);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      color: var(--primary);
+      margin-bottom: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 1.5rem;
+      margin-bottom: 15px;
+    }
+
+    /* About Section */
+    .about {
+      padding: 80px 0;
+    }
+
+    .about-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: center;
+    }
+
+    .about-text h2 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .about-text p {
+      margin-bottom: 20px;
+      color: var(--gray);
+    }
+
+    .about-image {
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+
+    .about-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+
+    /* Team Section */
+    .team {
+      padding: 80px 0;
+      background-color: var(--light);
+    }
+
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 30px;
+    }
+
+    .team-member {
+      background-color: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: transform 0.3s;
+    }
+
+    .team-member:hover {
+      transform: translateY(-10px);
+    }
+
+    .member-img {
+      height: 250px;
+      overflow: hidden;
+    }
+
+    .member-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.5s;
+    }
+
+    .team-member:hover .member-img img {
+      transform: scale(1.1);
+    }
+
+    .member-info {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .member-info h3 {
+      font-size: 1.3rem;
+      margin-bottom: 5px;
+    }
+
+    .member-info p {
+      color: var(--gray);
+      margin-bottom: 15px;
+    }
+
+    .social-links {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .social-links a {
+      color: var(--gray);
+      font-size: 1.2rem;
+      transition: color 0.3s;
+    }
+
+    .social-links a:hover {
+      color: var(--primary);
+    }
+
+    /* Contact Section */
+    .contact {
+      padding: 80px 0;
+    }
+
+    .contact-content {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+    }
+
+    .contact-form {
+      background-color: var(--light);
+      padding: 30px;
+      border-radius: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 150px;
+    }
+
+    .contact-info h3 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+    }
+
+    .contact-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .contact-item i {
+      color: var(--primary);
+      font-size: 1.5rem;
+      margin-right: 15px;
+      margin-top: 5px;
+    }
+
+    /* Footer */
+    footer {
+      background-color: var(--dark);
+      color: white;
+      padding: 70px 0 20px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 30px;
+      margin-bottom: 50px;
+    }
+
+    .footer-col h3 {
+      font-size: 1.3rem;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .footer-col h3::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      bottom: -8px;
+      width: 40px;
+      height: 3px;
+      background-color: var(--primary);
+    }
+
+    .footer-col ul {
+      list-style: none;
+    }
+
+    .footer-col ul li {
+      margin-bottom: 10px;
+    }
+
+    .footer-col ul li a {
+      color: #bbb;
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    .footer-col ul li a:hover {
+      color: var(--primary);
+    }
+
+    .social-icons {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .social-icons a {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: rgba(255, 255, 255, 0.1);
+      color: white;
+      transition: background-color 0.3s;
+    }
+
+    .social-icons a:hover {
+      background-color: var(--primary);
+    }
+
+    .copyright {
+      text-align: center;
+      padding-top: 30px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      color: #bbb;
+      font-size: 0.9rem;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 992px) {
+
+      .about-content,
+      .contact-content {
+        grid-template-columns: 1fr;
+      }
+
+      .hero h1 {
+        font-size: 2.5rem;
+      }
+    }
+
+    @media (max-width: 768px) {
+      nav ul {
+        display: none;
+      }
+
+      .mobile-menu-btn {
+        display: block;
+      }
+
+      .hero h1 {
+        font-size: 2rem;
+      }
+
+      .section-title h2 {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header -->
+  <header>
+    <div class="container header-container">
+      <a href="#" class="logo">
+        <i class="fas fa-brain"></i> 智谱
+      </a>
+      <nav>
+        <ul>
+          <li><a href="#home">首页</a></li>
+          <li><a href="#about">关于我们</a></li>
+          <li><a href="#features">核心技术</a></li>
+          <li><a href="#team">核心团队</a></li>
+          <li><a href="#contact">联系我们</a></li>
+        </ul>
+      </nav>
+      <button class="mobile-menu-btn">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </header>
+  <!-- Hero Section -->
+  <section id="home" class="hero">
+    <div class="container">
+      <h1>引领人工智能创新</h1>
+      <p>智谱致力于通过前沿的人工智能技术，为各行业提供智能化解决方案，推动社会进步。</p>
+      <a href="#features" class="btn btn-primary">了解更多</a>
+      <a href="#contact" class="btn btn-outline">联系我们</a>
+    </div>
+  </section>
+  <!-- Features Section -->
+  <section id="features" class="features">
+    <div class="container">
+      <div class="section-title">
+        <h2>核心技术</h2>
+        <p>智谱拥有领先的人工智能核心技术，涵盖自然语言处理、计算机视觉、知识图谱等多个领域。</p>
+      </div>
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-comments"></i>
+          </div>
+          <h3>自然语言处理</h3>
+          <p>先进的NLP技术，实现人机交互的智能化，提升用户体验。</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-eye"></i>
+          </div>
+          <h3>计算机视觉</h3>
+          <p>高精度的图像识别与分析技术，赋能各行业视觉应用。</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-project-diagram"></i>
+          </div>
+          <h3>知识图谱</h3>
+          <p>构建领域知识网络，实现知识的智能推理与应用。</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">
+            <i class="fas fa-chart-line"></i>
+          </div>
+          <h3>智能决策</h3>
+          <p>基于大数据分析的智能决策支持系统，助力企业高效运营。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- About Section -->
+  <section id="about" class="about">
+    <div class="container">
+      <div class="about-content">
+        <div class="about-text">
+          <h2>关于智谱</h2>
+          <p>智谱AI成立于2018年，是一家专注于人工智能技术研发与应用的高科技企业。公司总部位于北京，在上海、深圳、杭州等地设有分支机构，员工规模超过500人，其中研发人员占比70%以上。</p>
+          <p>自成立以来，智谱AI始终专注于人工智能核心技术研发，在自然语言处理、计算机视觉、知识图谱等领域取得了多项突破性成果。我们的技术已经广泛应用于金融、医疗、教育、零售等多个行业，为数千家企业提供了智能化解决方案。
+          </p>
+          <p>展望未来，智谱AI将继续秉承"技术驱动创新，智能改变世界"的使命，不断推动人工智能技术的发展与应用，为构建智能社会贡献力量。</p>
+        </div>
+        <div class="about-image">
+          <img
+            src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80"
+            alt="智谱AI办公环境">
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Team Section -->
+  <section id="team" class="team">
+    <div class="container">
+      <div class="section-title">
+        <h2>核心团队</h2>
+        <p>智谱AI拥有一支由人工智能领域专家组成的核心团队，致力于推动技术创新与产业应用。</p>
+      </div>
+      <div class="team-grid">
+        <div class="team-member">
+          <div class="member-img">
+            <img
+              src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+              alt="张明">
+          </div>
+          <div class="member-info">
+            <h3>张明</h3>
+            <p>创始人 & CEO</p>
+            <div class="social-links">
+              <a href="#"><i class="fab fa-linkedin"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="team-member">
+          <div class="member-img">
+            <img
+              src="https://images.unsplash.com/photo-1494790108755-2616b612b786?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+              alt="李华">
+          </div>
+          <div class="member-info">
+            <h3>李华</h3>
+            <p>首席技术官</p>
+            <div class="social-links">
+              <a href="#"><i class="fab fa-linkedin"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="team-member">
+          <div class="member-img">
+            <img
+              src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+              alt="王芳">
+          </div>
+          <div class="member-info">
+            <h3>王芳</h3>
+            <p>产品总监</p>
+            <div class="social-links">
+              <a href="#"><i class="fab fa-linkedin"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+        <div class="team-member">
+          <div class="member-img">
+            <img
+              src="https://images.unsplash.com/photo-1557862921-37829c790f19?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80"
+              alt="刘强">
+          </div>
+          <div class="member-info">
+            <h3>刘强</h3>
+            <p>研发总监</p>
+            <div class="social-links">
+              <a href="#"><i class="fab fa-linkedin"></i></a>
+              <a href="#"><i class="fab fa-twitter"></i></a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Contact Section -->
+  <section id="contact" class="contact">
+    <div class="container">
+      <div class="section-title">
+        <h2>联系我们</h2>
+        <p>有任何问题或需求，请随时与我们联系。</p>
+      </div>
+      <div class="contact-content">
+        <div class="contact-form">
+          <form id="contactForm">
+            <div class="form-group">
+              <label for="name">姓名</label>
+              <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-group">
+              <label for="email">邮箱</label>
+              <input type="email" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="subject">主题</label>
+              <input type="text" id="subject" name="subject" required>
+            </div>
+            <div class="form-group">
+              <label for="message">留言</label>
+              <textarea id="message" name="message" required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">提交</button>
+          </form>
+        </div>
+        <div class="contact-info">
+          <h3>联系方式</h3>
+          <div class="contact-item">
+            <i class="fas fa-map-marker-alt"></i>
+            <div>
+              <h4>地址</h4>
+              <p>北京市海淀区中关村科技园</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-phone-alt"></i>
+            <div>
+              <h4>电话</h4>
+              <p>+86 10 1234 5678</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-envelope"></i>
+            <div>
+              <h4>邮箱</h4>
+              <p>contact@zhipu.ai</p>
+            </div>
+          </div>
+          <div class="contact-item">
+            <i class="fas fa-clock"></i>
+            <div>
+              <h4>工作时间</h4>
+              <p>周一至周五: 9:00 - 18:00</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h3>关于智谱</h3>
+          <p>智谱AI是一家专注于人工智能技术研发与应用的高科技企业，致力于通过AI技术推动社会进步。</p>
+          <div class="social-icons">
+            <a href="#"><i class="fab fa-weixin"></i></a>
+            <a href="#"><i class="fab fa-weibo"></i></a>
+            <a href="#"><i class="fab fa-linkedin"></i></a>
+            <a href="#"><i class="fab fa-github"></i></a>
+          </div>
+        </div>
+        <div class="footer-col">
+          <h3>快速链接</h3>
+          <ul>
+            <li><a href="#home">首页</a></li>
+            <li><a href="#about">关于我们</a></li>
+            <li><a href="#features">核心技术</a></li>
+            <li><a href="#team">核心团队</a></li>
+            <li><a href="#contact">联系我们</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>产品服务</h3>
+          <ul>
+            <li><a href="#">自然语言处理</a></li>
+            <li><a href="#">计算机视觉</a></li>
+            <li><a href="#">知识图谱</a></li>
+            <li><a href="#">智能决策</a></li>
+            <li><a href="#">行业解决方案</a></li>
+          </ul>
+        </div>
+        <div class="footer-col">
+          <h3>联系我们</h3>
+          <ul>
+            <li><i class="fas fa-map-marker-alt"></i> 北京市海淀区中关村科技园</li>
+            <li><i class="fas fa-phone-alt"></i> +86 10 1234 5678</li>
+            <li><i class="fas fa-envelope"></i> contact@zhipu.ai</li>
+          </ul>
+        </div>
+      </div>
+      <div class="copyright">
+        <p>&copy; 2023 智谱AI 版权所有</p>
+      </div>
+    </div>
+  </footer>
+  <script>
+    // Mobile menu toggle
+    const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
+    const nav = document.querySelector('nav ul');
+    mobileMenuBtn.addEventListener('click', () => {
+      nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
+    });
+    // Smooth scrolling for navigation links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          window.scrollTo({
+            top: target.offsetTop - 80,
+            behavior: 'smooth'
+          });
+          // Close mobile menu if open
+          if (window.innerWidth <= 768) {
+            nav.style.display = 'none';
+          }
+        }
+      });
+    });
+    // Form submission
+    const contactForm = document.getElementById('contactForm');
+    contactForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      // Get form values
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const subject = document.getElementById('subject').value;
+      const message = document.getElementById('message').value;
+      // Here you would normally send the form data to a server
+      // For this demo, we'll just show a success message
+      const formElements = contactForm.elements;
+      for (let i = 0; i < formElements.length; i++) {
+        formElements[i].disabled = true;
+      }
+      // Create success message
+      const successMessage = document.createElement('div');
+      successMessage.style.padding = '20px';
+      successMessage.style.backgroundColor = '#d4edda';
+      successMessage.style.color = '#155724';
+      successMessage.style.borderRadius = '5px';
+      successMessage.style.marginTop = '20px';
+      successMessage.textContent = '感谢您的留言！我们会尽快回复您。';
+      contactForm.appendChild(successMessage);
+      // Reset form after 5 seconds
+      setTimeout(() => {
+        contactForm.reset();
+        for (let i = 0; i < formElements.length; i++) {
+          formElements[i].disabled = false;
+        }
+        successMessage.remove();
+      }, 5000);
+    });
+    // Add active class to navigation items based on scroll position
+    window.addEventListener('scroll', () => {
+      const sections = document.querySelectorAll('section');
+      const navItems = document.querySelectorAll('nav ul li a');
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (pageYOffset >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
+      });
+      navItems.forEach(item => {
+        item.classList.remove('active');
+        if (item.getAttribute('href').slice(1) === current) {
+          item.classList.add('active');
+        }
+      });
+    });
   </script>
 </body>
 

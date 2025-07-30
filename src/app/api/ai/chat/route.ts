@@ -13,11 +13,12 @@ export async function POST(req: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
+    const body = await req.json() as unknown;
     const {
       courseId,
       chapterNumber,
-      /* type, content, userAnswer, */ messages,
-    } = (await req.json()) as {
+      messages,
+    } = body as {
       courseId: string;
       chapterNumber: number;
       messages: Array<{ role: string; content: string }>;
@@ -126,13 +127,16 @@ export async function POST(req: Request) {
           role: "system" as const,
           content: chapter?.contentMd ?? "",
         },
-        ...(messages as Array<{ role: "user" | "assistant"; content: string }>),
+        ...messages.map(msg => ({
+          role: msg.role as "user" | "assistant",
+          content: msg.content
+        })),
       ],
       ...CHAT_GENERATION_CONFIG,
     });
 
     return result.toDataStreamResponse();
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("AI chat error:", error);
     return new Response("Internal server error", { status: 500 });
   }

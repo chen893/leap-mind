@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { generateTitleAndDescription as generateTitleAndDescriptionAPI } from "@/lib/course-ai";
 
 export default function CreateCoursePage() {
   const [userInput, setUserInput] = useState("");
@@ -95,7 +96,8 @@ export default function CreateCoursePage() {
       });
       throw new Error("请输入课程描述");
     }
-
+    const result = await generateTitleAndDescriptionAPI(userInput.trim());
+    console.log("result", result);
     try {
       const result = await generateTitleAndDescriptionMutation.mutateAsync({
         userInput: userInput.trim(),
@@ -207,7 +209,7 @@ export default function CreateCoursePage() {
                   <div className="relative">
                     <Textarea
                       id="userInput"
-                      placeholder="例如：我想学习Python编程，希望能够开发网站和数据分析...\n或者：想掌握UI设计，学会使用Figma制作原型...\n或者：学习机器学习，了解算法原理并能实际应用..."
+                      placeholder="例如：我想学习Python编程，希望能够开发网站和数据分析..."
                       value={userInput}
                       onChange={(e) => setUserInput(e.target.value)}
                       disabled={isGenerating || isCreating}

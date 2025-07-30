@@ -326,4 +326,19 @@ export const courseRouter = createTRPCRouter({
 
       return updatedCourse;
     }),
+
+  getChapterById: protectedProcedure
+    .input(z.object({ chapterId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      console.log("getChapterById", input.chapterId);
+      const chapter = await ctx.db.chapter.findUnique({
+        where: { id: input.chapterId },
+      });
+
+      if (!chapter) {
+        throw new Error("Chapter not found");
+      }
+
+      return chapter;
+    }),
 });

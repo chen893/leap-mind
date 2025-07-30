@@ -1,6 +1,9 @@
 import { courseRouter } from "@/server/api/routers/course";
 import { chapterRouter } from "@/server/api/routers/chapter";
 import { assessmentRouter } from "@/server/api/routers/assessment";
+import { learningVerificationRouter } from "@/server/api/routers/learningVerification";
+import { pointsRouter } from "@/server/api/routers/points";
+import { achievementsRouter } from "@/server/api/routers/achievements";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -12,6 +15,9 @@ export const appRouter = createTRPCRouter({
   course: courseRouter,
   chapter: chapterRouter,
   assessment: assessmentRouter,
+  learningVerification: learningVerificationRouter,
+  points: pointsRouter,
+  achievements: achievementsRouter,
 });
 
 // export type definition of API

@@ -283,13 +283,15 @@ enum QuestionType {
     OPEN_ENDED // 开放式问题
     MULTIPLE_CHOICE // 选择题
     TRUE_FALSE // 判断题
-    SHORT_ANSWER // 简答题
+    FILL_BLANK // 填空题
 }
 
 enum QuestionCategory {
     SOCRATIC // 苏格拉底式问题
-    REFLECTION // 反思性问题
-    APPLICATION // 应用性问题
+    REFLECTIVE // 反思性问题
+    ANALYTICAL // 分析性问题
+    CREATIVE // 创造性问题
+    PRACTICAL // 实践性问题
 }
 
 enum Difficulty {
@@ -300,20 +302,18 @@ enum Difficulty {
 
 enum PointsReason {
     CHAPTER_COMPLETION // 完成章节
-    PERFECT_SCORE // 满分通过
-    FIRST_ATTEMPT // 首次尝试
-    STREAK_BONUS // 连续学习奖励
-    COURSE_COMPLETION // 完成课程
-    ACHIEVEMENT_UNLOCK // 解锁成就
+    QUESTION_CORRECT // 问题回答正确
     DAILY_LOGIN // 每日登录
-    QUALITY_ANSWER // 高质量回答
+    STREAK_BONUS // 连续学习奖励
+    ACHIEVEMENT_UNLOCK // 解锁成就
+    COURSE_COMPLETION // 完成课程
+    PERFECT_SCORE // 满分奖励
 }
 
 enum AchievementCategory {
-    LEARNING // 学习相关
-    STREAK // 连续学习
-    COMPLETION // 完成相关
-    QUALITY // 质量相关
-    SOCIAL // 社交相关
-    MILESTONE // 里程碑
+    LEARNING // 学习成就
+    STREAK // 连续性成就
+    MASTERY // 精通成就
+    SOCIAL // 社交成就
+    MILESTONE // 里程碑成就
 }

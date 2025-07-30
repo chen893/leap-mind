@@ -110,7 +110,7 @@ export function LearningVerificationDialog({
 
           // 回显已有的答案和评估结果
           questionsResult.data.forEach((question) => {
-            if (question.userAnswers && question.userAnswers.length > 0) {
+            if (question?.userAnswers && question?.userAnswers?.length > 0) {
               const userAnswer = question.userAnswers[0]; // 取最新的答案
               if (userAnswer) {
                 // 更新用户答案到store

@@ -5,6 +5,13 @@ import {
   DEFAULT_GENERATION_CONFIG,
   TITLE_DESCRIPTION_CONFIG,
 } from "@/lib/openai";
+import {
+  QuestionType,
+  QuestionCategory,
+  Difficulty,
+  PointsReason,
+  AchievementCategory,
+} from "@prisma/client";
 
 // Schema 定义
 export const titleDescriptionSchema = z.object({
@@ -28,13 +35,19 @@ export const chapterQuestionsSchema = z.object({
       questionNumber: z.number(),
       questionText: z.string(),
       questionType: z.enum([
-        "OPEN_ENDED",
-        "MULTIPLE_CHOICE",
-        "TRUE_FALSE",
-        "SHORT_ANSWER",
+        QuestionType.FILL_BLANK,
+        QuestionType.OPEN_ENDED,
+        QuestionType.MULTIPLE_CHOICE,
+        QuestionType.TRUE_FALSE,
       ]),
-      questionCategory: z.enum(["SOCRATIC", "REFLECTION", "APPLICATION"]),
-      difficulty: z.enum(["EASY", "MEDIUM", "HARD"]),
+      questionCategory: z.enum([
+        QuestionCategory.SOCRATIC,
+        QuestionCategory.REFLECTIVE,
+        QuestionCategory.ANALYTICAL,
+        QuestionCategory.CREATIVE,
+        QuestionCategory.PRACTICAL,
+      ]),
+      difficulty: z.enum([Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD]),
       hints: z.array(z.string()).optional(),
       options: z.array(z.string()).optional(),
       expectedAnswer: z.string().optional(),
@@ -207,7 +220,7 @@ export async function generateChapterQuestions({
   level: "beginner" | "intermediate";
 }): Promise<ChapterQuestionsResult> {
   const levelText = level === "beginner" ? "初学者" : "有基础";
-
+  // - questionType: 问题类型（${QuestionType.FILL_BLANK} 填空题, ${QuestionType.OPEN_ENDED} 开放式问题, ${QuestionType.MULTIPLE_CHOICE} 选择题, ${QuestionType.TRUE_FALSE} 判断题）
   const prompt = `
 角色设定：
 你是一位经验丰富的苏格拉底式教学专家和教育心理学家。你擅长通过精心设计的问题来引导学生深度思考，帮助他们真正理解和掌握知识，而不是简单的记忆。
@@ -239,9 +252,9 @@ ${chapterContent}
 请生成一个严格的JSON对象，包含3-5个问题。每个问题必须包含：
 - questionNumber: 问题序号（1-5）
 - questionText: 问题内容（清晰、具体、引导性强）
-- questionType: 问题类型（OPEN_ENDED, MULTIPLE_CHOICE, TRUE_FALSE, SHORT_ANSWER）
-- questionCategory: 问题分类（SOCRATIC-苏格拉底式, REFLECTION-反思性, APPLICATION-应用性）
-- difficulty: 问题难度（EASY-简单, MEDIUM-中等, HARD-困难）
+- questionType: 问题类型（${QuestionType.OPEN_ENDED} 开放式问题）
+- questionCategory: 问题分类（${QuestionCategory.SOCRATIC} 苏格拉底式, ${QuestionCategory.REFLECTIVE} 反思性, ${QuestionCategory.ANALYTICAL} 分析性, ${QuestionCategory.CREATIVE} 创造性, ${QuestionCategory.PRACTICAL} 实践性）
+- difficulty: 问题难度（${Difficulty.EASY} 简单, ${Difficulty.MEDIUM} 中等, ${Difficulty.HARD} 困难）
 - hints: 思考提示数组（可选，2-3个引导性提示）
 - options: 选择题选项（仅当questionType为MULTIPLE_CHOICE时）
 - expectedAnswer: 期望答案要点（用于AI评估参考）

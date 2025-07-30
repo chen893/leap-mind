@@ -6,9 +6,8 @@ import type {
   PointsActions,
   PointsUpdateResult,
 } from "@/types/store";
-import {
-  type PointsReason,
-} from "@prisma/client";
+
+import { type PointsReason, type Achievement } from "@prisma/client";
 
 const initialState: PointsState = {
   userPoints: null,

@@ -49,7 +49,11 @@ export default function CoursePage() {
   const userProgress = userCourses?.find((p) => p.course.id === courseId);
   const unlockedChapters = userProgress?.unlockedChapters ?? [1];
   const isCreator = session?.user?.id === course?.creatorId;
-  const selectNextChapter = async () => {
+  const selectNextChapter = async (onlyRefresh = false) => {
+    if (onlyRefresh) {
+      await refetchUserCourses();
+      return;
+    }
     await refetchUserCourses();
     setSelectedChapterByNumber(
       (selectedChapterNumber ?? 1) + 1,

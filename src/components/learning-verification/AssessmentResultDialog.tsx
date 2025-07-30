@@ -130,11 +130,7 @@ export function AssessmentResultDialog({
 
                   <div className="flex flex-col gap-4 pt-6 sm:flex-row">
                     {assessmentResult.canProgress ? (
-                      <Button
-                        onClick={onComplete}
-                        size="lg"
-                        className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white shadow-lg transition-all duration-200 hover:scale-105 hover:from-green-700 hover:to-emerald-700 hover:shadow-xl"
-                      >
+                      <Button onClick={onComplete} size="lg" className="flex-1">
                         <ArrowRight className="mr-2 h-5 w-5" />
                         前往下一章节
                       </Button>

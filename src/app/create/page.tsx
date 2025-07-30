@@ -96,8 +96,6 @@ export default function CreateCoursePage() {
       });
       throw new Error("请输入课程描述");
     }
-    const result = await generateTitleAndDescriptionAPI(userInput.trim());
-    console.log("result", result);
     try {
       const result = await generateTitleAndDescriptionMutation.mutateAsync({
         userInput: userInput.trim(),

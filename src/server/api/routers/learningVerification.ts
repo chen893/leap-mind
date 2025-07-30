@@ -87,6 +87,7 @@ export const learningVerificationRouter = createTRPCRouter({
           level: "intermediate" as const,
         });
 
+        console.log("aiQuestions", aiQuestions);
         // 保存问题到数据库
         const savedQuestions = await Promise.all(
           aiQuestions.questions.map((question) =>

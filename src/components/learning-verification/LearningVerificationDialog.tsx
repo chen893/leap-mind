@@ -12,7 +12,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
 import {} from "@/components/ui/scroll-area";
 import {
   BookOpen,
@@ -266,21 +266,27 @@ export function LearningVerificationDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="flex h-[90vh] w-[80vw] flex-col gap-0 overflow-scroll p-0">
-          {/* 固定顶部标题栏 */}
-          <div className="flex shrink-0 items-center justify-between border-b bg-white px-6 py-4 shadow-sm">
-            <div className="flex items-center space-x-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
-                <BookOpen className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-gray-900">
-                  学习验证
-                </h2>
-                <p className="text-sm text-gray-500">{chapterTitle}</p>
+        <DialogContent
+          className="max-h-[90vh] overflow-y-auto"
+          style={{ maxWidth: "80vw" }}
+        >
+          <DialogHeader>
+            <div className="flex shrink-0 items-center justify-between border-b bg-white">
+              <div className="flex items-center space-x-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
+                  <BookOpen className="h-4 w-4 text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    学习验证
+                  </h2>
+                  <p className="text-sm text-gray-500">{chapterTitle}</p>
+                </div>
               </div>
             </div>
-          </div>
+          </DialogHeader>
+
+          {/* 固定顶部标题栏 */}
 
           <div className="flex max-w-[70vw] flex-1 flex-col">
             <>
@@ -431,7 +437,7 @@ export function LearningVerificationDialog({
                         {/* 问题内容区域 */}
                         <div
                           style={{ minWidth: "30vw" }}
-                          className="min-w-[50vw] rounded-xl border border-gray-200 bg-white"
+                          className="rounded-xl border border-gray-200 bg-white"
                         >
                           <SocraticQuestion
                             question={currentQuestion}

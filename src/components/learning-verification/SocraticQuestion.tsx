@@ -76,7 +76,7 @@ export function SocraticQuestion({
   const isAnswered = evaluation !== undefined;
 
   return (
-    <div className="max-h-[70vh] min-w-[60vw] space-y-6 overflow-auto p-6">
+    <div className="max-h-[70vh] max-w-[80vw] min-w-[60vw] space-y-6 overflow-auto p-6">
       {/* 问题卡片 */}
       <Card className="border-0 shadow-none">
         <CardHeader className="space-y-4">

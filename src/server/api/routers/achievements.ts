@@ -50,13 +50,8 @@ export const achievementsRouter = createTRPCRouter({
       name: string;
       description: string;
       icon: string;
-      category:
-        | "LEARNING"
-        | "STREAK"
-        | "COMPLETION"
-        | "QUALITY"
-        | "SOCIAL"
-        | "MILESTONE";
+      category: AchievementCategory;
+
       condition: unknown;
       points: number;
       isActive: boolean;
@@ -233,7 +228,7 @@ export const achievementsRouter = createTRPCRouter({
           name: "章节收集者",
           description: "完成50个章节",
           icon: "📖",
-          category: "COMPLETION",
+          category: "MASTERY",
           condition: "COMPLETE_50_CHAPTERS",
           points: 300,
         },
@@ -241,7 +236,7 @@ export const achievementsRouter = createTRPCRouter({
           name: "章节大师",
           description: "完成100个章节",
           icon: "📚",
-          category: "COMPLETION",
+          category: "MASTERY",
           condition: "COMPLETE_100_CHAPTERS",
           points: 800,
         },
@@ -281,7 +276,7 @@ export const achievementsRouter = createTRPCRouter({
           name: "完美主义者",
           description: "获得10次满分",
           icon: "💯",
-          category: "QUALITY",
+          category: "MASTERY",
           condition: "PERFECT_SCORE_10_TIMES",
           points: 500,
         },

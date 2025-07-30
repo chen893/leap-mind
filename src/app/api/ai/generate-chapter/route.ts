@@ -10,7 +10,6 @@ import {
 
 export async function POST(req: Request) {
   try {
-    console.log("开始调用");
     const session = await auth();
     if (!session?.user) {
       return new Response("Unauthorized", { status: 401 });

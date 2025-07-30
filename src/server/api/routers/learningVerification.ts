@@ -111,7 +111,6 @@ export const learningVerificationRouter = createTRPCRouter({
             }),
           ),
         );
-
         return savedQuestions;
       } catch (error) {
         console.error("Failed to generate questions:", error);

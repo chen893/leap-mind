@@ -32,7 +32,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { QuestionCategory, Difficulty } from "@/types/api";
+import type { Difficulty } from "@/types/api";
+import { QuestionCategory } from "@prisma/client";
 import type { SocraticQuestionProps } from "@/types/components";
 
 const difficultyColors: Record<Difficulty, string> = {
@@ -42,9 +43,11 @@ const difficultyColors: Record<Difficulty, string> = {
 };
 
 const typeLabels: Record<QuestionCategory, string> = {
-  SOCRATIC: "苏格拉底式",
-  REFLECTION: "反思性",
-  APPLICATION: "应用性",
+  [QuestionCategory.SOCRATIC]: "苏格拉底式",
+  [QuestionCategory.REFLECTIVE]: "反思性",
+  [QuestionCategory.ANALYTICAL]: "分析性",
+  [QuestionCategory.CREATIVE]: "创造性",
+  [QuestionCategory.PRACTICAL]: "实践性",
 };
 
 const difficultyLabels: Record<Difficulty, string> = {

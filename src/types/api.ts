@@ -50,10 +50,6 @@ export type UserAchievements =
 export type UnlockedAchievements =
   RouterOutputs["achievements"]["checkAndUnlockAchievements"];
 
-// Assessment Router
-export type SubmittedAssessment = RouterOutputs["assessment"]["submit"];
-export type AssessmentHistory = RouterOutputs["assessment"]["getHistory"];
-
 // ============================================================================
 // TRPC Router Input Types
 // ============================================================================
@@ -66,17 +62,10 @@ export type SubmitAnswerInput =
   RouterInputs["learningVerification"]["submitAnswer"];
 export type EvaluateAnswersInput =
   RouterInputs["learningVerification"]["evaluateAnswers"];
-export type GetAssessmentInput =
-  RouterInputs["learningVerification"]["getAssessment"];
 
 // Points Router Inputs
 export type GetPointsHistoryInput = RouterInputs["points"]["getPointsHistory"];
 export type GetLeaderboardInput = RouterInputs["points"]["getLeaderboard"];
-
-// Assessment Router Inputs
-export type SubmitAssessmentInput = RouterInputs["assessment"]["submit"];
-export type GetAssessmentHistoryInput =
-  RouterInputs["assessment"]["getHistory"];
 
 // ============================================================================
 // Extended Prisma Types with Relations
@@ -88,7 +77,7 @@ export type UserWithRelations = User & {
   sessions?: Session[];
   createdCourses?: Course[];
   courseProgresses?: UserCourseProgress[];
-  assessments?: Assessment[];
+
   questionAnswers?: UserQuestionAnswer[];
   userPoints?: UserPoints;
   achievements?: UserAchievement[];
@@ -104,7 +93,7 @@ export type CourseWithRelations = Course & {
 // Chapter with relations
 export type ChapterWithRelations = Chapter & {
   course: Course;
-  assessments?: Assessment[];
+
   questions?: ChapterQuestion[];
 };
 

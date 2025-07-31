@@ -20,7 +20,7 @@ export interface CourseContentAreaProps {
   courseId: string;
   selectedChapterNumber: number | null;
   unlockedChapters: number[];
-  selectNextChapter: () => void;
+  selectNextChapter: (onlyRefresh?: boolean) => void;
 }
 
 export interface ChapterContentProps {
@@ -63,7 +63,7 @@ export interface LearningVerificationDialogProps {
   chapterId: string;
   chapterTitle: string;
   courseId: string;
-  onComplete?: () => void;
+  onComplete?: (onlyRefresh?: boolean) => void;
 }
 
 // ===== Points Components =====

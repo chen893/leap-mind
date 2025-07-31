@@ -84,42 +84,7 @@ export const courseRouter = createTRPCRouter({
       } catch (error) {
         // 如果AI生成失败，回退到基础章节结构
         console.error("AI outline generation failed:", error);
-
-        const fallbackChapterTitles = [
-          "基础概念介绍",
-          "核心原理解析",
-          "实践应用案例",
-          "进阶技巧",
-          "总结与展望",
-        ];
-
-        const chapters = await Promise.all(
-          fallbackChapterTitles.map((title, index) =>
-            ctx.db.chapter.create({
-              data: {
-                courseId: course.id,
-                chapterNumber: index + 1,
-                title,
-                // contentMd 保持为空，按需生成
-              },
-            }),
-          ),
-        );
-
-        // 创建用户课程进度记录
-        await ctx.db.userCourseProgress.create({
-          data: {
-            userId: ctx.session.user.id,
-            courseId: course.id,
-            status: "IN_PROGRESS",
-            unlockedChapters: [1], // 默认解锁第一章
-          },
-        });
-
-        return {
-          course,
-          chapters,
-        };
+        throw new Error("Failed to generate course outline");
       }
     }),
 
@@ -234,72 +199,6 @@ export const courseRouter = createTRPCRouter({
         courses,
         nextCursor,
       };
-    }),
-
-  // 克隆课程
-  clone: protectedProcedure
-    .input(z.object({ courseId: z.string() }))
-    .mutation(async ({ ctx, input }) => {
-      const originalCourse = await ctx.db.course.findUnique({
-        where: { id: input.courseId },
-        include: {
-          chapters: {
-            orderBy: {
-              chapterNumber: "asc",
-            },
-          },
-        },
-      });
-
-      if (!originalCourse) {
-        throw new Error("Course not found");
-      }
-
-      // 创建新课程
-      const newCourse = await ctx.db.course.create({
-        data: {
-          title: `${originalCourse.title} (克隆)`,
-          description: originalCourse.description,
-          creatorId: ctx.session.user.id,
-        },
-      });
-
-      // 复制章节
-      await Promise.all(
-        originalCourse.chapters.map((chapter) =>
-          ctx.db.chapter.create({
-            data: {
-              courseId: newCourse.id,
-              chapterNumber: chapter.chapterNumber,
-              title: chapter.title,
-              contentMd: chapter.contentMd,
-              contentQualityScore: chapter.contentQualityScore,
-            },
-          }),
-        ),
-      );
-
-      // 创建用户进度记录
-      await ctx.db.userCourseProgress.create({
-        data: {
-          userId: ctx.session.user.id,
-          courseId: newCourse.id,
-          status: "IN_PROGRESS",
-          unlockedChapters: [1],
-        },
-      });
-
-      // 增加原课程的克隆计数
-      await ctx.db.course.update({
-        where: { id: input.courseId },
-        data: {
-          joinedByCount: {
-            increment: 1,
-          },
-        },
-      });
-
-      return newCourse;
     }),
 
   // 发布课程到广场

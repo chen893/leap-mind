@@ -55,7 +55,6 @@ export function ChapterContent({
         description: "章节内容已更新",
       });
       void setTimeout(() => {
-        console.log("refetch");
         void refetch();
       }, 3000);
     },

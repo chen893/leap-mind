@@ -4,6 +4,7 @@ import type {
   UserAchievement,
   PointsReason,
   Chapter,
+  ChapterStatus,
 } from "@prisma/client";
 import type {
   LeaderboardEntry,
@@ -58,20 +59,22 @@ export interface PointsActions {
 export type PointsStore = PointsState & PointsActions;
 
 // ===== Learning Verification Store Types =====
-export interface AssessmentResult {
+export interface ChapterAssessmentResult {
   canProgress: boolean;
   totalScore: number;
   pointsEarned: number;
   feedback: string;
-  evaluationResults: Array<{
-    questionId: string;
-    questionText: string;
-    userAnswer: string;
-    score: number;
-    feedback: string;
-    isCorrect: boolean;
-    suggestions?: string[];
-  }>;
+}
+
+export interface ChapterProgressData {
+  id: string;
+  userId: string;
+  courseId: string;
+  chapterId: string;
+  status: ChapterStatus;
+  unlockedAt: Date | null;
+  completedAt: Date | null;
+  chapter?: Chapter;
 }
 
 export interface LearningVerificationState {
@@ -80,7 +83,9 @@ export interface LearningVerificationState {
   currentQuestionIndex: number;
   isLoading: boolean;
   isEvaluating: boolean;
-  assessmentResult: AssessmentResult | null;
+  assessmentResult: ChapterAssessmentResult | null;
+  chapterProgress: ChapterProgressData | null;
+  courseProgress: ChapterProgressData[];
   error: string | null;
   showHints: Record<string, boolean>;
   retryCount: Record<string, number>;
@@ -95,7 +100,9 @@ export interface LearningVerificationActions {
   goToQuestion: (index: number) => void;
   setLoading: (loading: boolean) => void;
   setEvaluating: (evaluating: boolean) => void;
-  setAssessmentResult: (result: AssessmentResult | null) => void;
+  setAssessmentResult: (result: ChapterAssessmentResult | null) => void;
+  setChapterProgress: (progress: ChapterProgressData | null) => void;
+  setCourseProgress: (progresses: ChapterProgressData[]) => void;
   setError: (error: string | null) => void;
   toggleHints: (questionId: string) => void;
   incrementRetry: (questionId: string) => void;

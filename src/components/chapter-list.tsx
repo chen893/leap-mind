@@ -8,7 +8,7 @@ import type { ChapterListProps } from "@/types/components";
 export function ChapterList({
   chapters,
   selectedChapterNumber,
-  unlockedChapters,
+  chapterProgresses,
   onChapterSelect,
 }: ChapterListProps) {
   return (
@@ -22,7 +22,9 @@ export function ChapterList({
       <CardContent className="p-0">
         <div className="max-h-[70vh] space-y-1 overflow-auto">
           {chapters.map((chapter) => {
-            const isUnlocked = unlockedChapters.includes(chapter.chapterNumber);
+            const chapterProgress = chapterProgresses.find(p => p.chapterId === chapter.id);
+            const isUnlocked = chapterProgress?.status === "UNLOCKED" || chapterProgress?.status === "COMPLETED" || chapter.chapterNumber === 1;
+            const isCompleted = chapterProgress?.status === "COMPLETED";
             const isSelected = selectedChapterNumber === chapter.chapterNumber;
 
             return (
@@ -42,12 +44,10 @@ export function ChapterList({
                 >
                   <div className="flex items-start space-x-3">
                     <div className="mt-0.5 flex-shrink-0">
-                      {isUnlocked ? (
-                        chapter.contentMd ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <PlayCircle className="h-5 w-5 text-blue-500" />
-                        )
+                      {isCompleted ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : isUnlocked ? (
+                        <PlayCircle className="h-5 w-5 text-blue-500" />
                       ) : (
                         <Lock className="h-5 w-5 text-gray-400" />
                       )}

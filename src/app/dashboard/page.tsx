@@ -41,8 +41,22 @@ export default function DashboardPage() {
 
   const totalChapters =
     userCourses?.reduce((sum, p) => sum + p.course.chapters.length, 0) ?? 0;
-  const completedChapters =
-    userCourses?.reduce((sum, p) => sum + p.unlockedChapters.length, 0) ?? 0;
+  
+  // 获取所有课程的章节进度数据
+  const allChapterProgresses = userCourses?.map(course => 
+    api.learningVerification.getCourseProgress.useQuery(
+      { courseId: course.course.id },
+      { enabled: !!course.course.id }
+    )
+  ) ?? [];
+  
+  // 计算已完成的章节数量
+  const completedChapters = allChapterProgresses.reduce((total, query) => {
+    if (query.data) {
+      return total + query.data.filter(progress => progress.status === "COMPLETED").length;
+    }
+    return total;
+  }, 0);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -152,14 +166,28 @@ export default function DashboardPage() {
               </div>
             ) : inProgressCourses.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {inProgressCourses.map((progress) => (
-                  <CourseCard
-                    key={progress.course.id}
-                    course={progress.course}
-                    progress={progress}
-                    showProgress={true}
-                  />
-                ))}
+                {inProgressCourses.map((progress, index) => {
+                  const courseProgressQuery = allChapterProgresses[userCourses?.findIndex(p => p.course.id === progress.course.id) ?? -1];
+                  const chapterProgresses = courseProgressQuery?.data ?? [];
+                  
+                  return (
+                    <CourseCard
+                      key={progress.course.id}
+                      course={progress.course}
+                      progress={{
+                        status: progress.status,
+                        chapterProgresses: progress.course.chapters.map(chapter => {
+                          const chapterProgress = chapterProgresses.find(cp => cp.chapterId === chapter.id);
+                          return {
+                            chapterId: chapter.id,
+                            status: chapterProgress?.status ?? "LOCKED" as const
+                          };
+                        })
+                      }}
+                      showProgress={true}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="py-12 text-center">
@@ -183,14 +211,28 @@ export default function DashboardPage() {
           <TabsContent value="completed" className="mt-6">
             {completedCourses.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {completedCourses.map((progress) => (
-                  <CourseCard
-                    key={progress.course.id}
-                    course={progress.course}
-                    progress={progress}
-                    showProgress={true}
-                  />
-                ))}
+                {completedCourses.map((progress) => {
+                  const courseProgressQuery = allChapterProgresses[userCourses?.findIndex(p => p.course.id === progress.course.id) ?? -1];
+                  const chapterProgresses = courseProgressQuery?.data ?? [];
+                  
+                  return (
+                    <CourseCard
+                      key={progress.course.id}
+                      course={progress.course}
+                      progress={{
+                        status: progress.status,
+                        chapterProgresses: progress.course.chapters.map(chapter => {
+                          const chapterProgress = chapterProgresses.find(cp => cp.chapterId === chapter.id);
+                          return {
+                            chapterId: chapter.id,
+                            status: chapterProgress?.status ?? "LOCKED" as const
+                          };
+                        })
+                      }}
+                      showProgress={true}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="py-12 text-center">
@@ -206,14 +248,28 @@ export default function DashboardPage() {
           <TabsContent value="created" className="mt-6">
             {createdCourses.length > 0 ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {createdCourses.map((progress) => (
-                  <CourseCard
-                    key={progress.course.id}
-                    course={progress.course}
-                    progress={progress}
-                    showProgress={true}
-                  />
-                ))}
+                {createdCourses.map((progress) => {
+                  const courseProgressQuery = allChapterProgresses[userCourses?.findIndex(p => p.course.id === progress.course.id) ?? -1];
+                  const chapterProgresses = courseProgressQuery?.data ?? [];
+                  
+                  return (
+                    <CourseCard
+                      key={progress.course.id}
+                      course={progress.course}
+                      progress={{
+                        status: progress.status,
+                        chapterProgresses: progress.course.chapters.map(chapter => {
+                          const chapterProgress = chapterProgresses.find(cp => cp.chapterId === chapter.id);
+                          return {
+                            chapterId: chapter.id,
+                            status: chapterProgress?.status ?? "LOCKED" as const
+                          };
+                        })
+                      }}
+                      showProgress={true}
+                    />
+                  );
+                })}
               </div>
             ) : (
               <div className="py-12 text-center">

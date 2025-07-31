@@ -4,7 +4,8 @@ import type {
   LearningVerificationStore,
   LearningVerificationState,
   LearningVerificationActions,
-  AssessmentResult,
+  ChapterAssessmentResult,
+  ChapterProgressData,
 } from "@/types/store";
 import type { UserAnswer } from "@/types/api";
 
@@ -15,6 +16,8 @@ const initialState: LearningVerificationState = {
   isLoading: false,
   isEvaluating: false,
   assessmentResult: null,
+  chapterProgress: null,
+  courseProgress: [],
   error: null,
   showHints: {},
   retryCount: {},
@@ -98,6 +101,14 @@ export const useLearningVerificationStore = create<LearningVerificationStore>()(
         set({ assessmentResult: result });
       },
 
+      setChapterProgress: (progress) => {
+        set({ chapterProgress: progress });
+      },
+
+      setCourseProgress: (progresses) => {
+        set({ courseProgress: progresses });
+      },
+
       setError: (error) => {
         set({ error });
       },
@@ -131,6 +142,7 @@ export const useLearningVerificationStore = create<LearningVerificationStore>()(
           showHints: {},
           retryCount: {},
           assessmentResult: null,
+          chapterProgress: null,
           error: null,
           isEvaluating: false,
         });

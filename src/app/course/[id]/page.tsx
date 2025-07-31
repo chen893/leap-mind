@@ -27,6 +27,8 @@ export default function CoursePage() {
   } = api.course.getById.useQuery({ id: courseId });
   const { data: userCourses, refetch: refetchUserCourses } =
     api.course.getUserCourses.useQuery();
+  const { data: chapterProgresses, refetch: refetchChapterProgresses } =
+    api.learningVerification.getCourseProgress.useQuery({ courseId });
 
   // 初始化选中第一章
   useEffect(() => {
@@ -46,15 +48,15 @@ export default function CoursePage() {
     };
   }, [reset]);
 
-  const userProgress = userCourses?.find((p) => p.course.id === courseId);
-  const unlockedChapters = userProgress?.unlockedChapters ?? [1];
   const isCreator = session?.user?.id === course?.creatorId;
   const selectNextChapter = async (onlyRefresh = false) => {
     if (onlyRefresh) {
       await refetchUserCourses();
+      await refetchChapterProgresses();
       return;
     }
     await refetchUserCourses();
+    await refetchChapterProgresses();
     setSelectedChapterByNumber(
       (selectedChapterNumber ?? 1) + 1,
       course!.chapters,
@@ -75,7 +77,7 @@ export default function CoursePage() {
       <div className="container mx-auto flex flex-1 flex-col px-4 py-6">
         <CourseHeader
           course={course}
-          userProgress={userProgress}
+          chapterProgresses={chapterProgresses ?? []}
           isCreator={isCreator}
           onCourseUpdate={refetch}
         />
@@ -86,7 +88,7 @@ export default function CoursePage() {
               <ChapterList
                 chapters={course.chapters}
                 selectedChapterNumber={selectedChapterNumber}
-                unlockedChapters={unlockedChapters}
+                chapterProgresses={chapterProgresses ?? []}
                 onChapterSelect={(chapterNumber) =>
                   setSelectedChapterByNumber(chapterNumber, course.chapters)
                 }
@@ -99,7 +101,7 @@ export default function CoursePage() {
               <CourseContentArea
                 courseId={courseId}
                 selectedChapterNumber={selectedChapterNumber}
-                unlockedChapters={unlockedChapters}
+                chapterProgresses={chapterProgresses ?? []}
                 selectNextChapter={selectNextChapter}
               />
             )}

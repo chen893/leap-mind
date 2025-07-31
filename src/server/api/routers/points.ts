@@ -203,22 +203,26 @@ export const pointsRouter = createTRPCRouter({
     });
 
     // 获取完成的章节数量
-    const completedChapters = await ctx.db.assessment.count({
+    const completedChapters = await ctx.db.userChapterProgress.count({
       where: {
         userId: ctx.session.user.id,
-        canProgress: true,
+        status: "COMPLETED",
       },
     });
 
-    // 获取平均分数
-    const averageScore = await ctx.db.assessment.aggregate({
+    // 获取平均分数 - 通过UserQuestionAnswer计算
+    const userAnswers = await ctx.db.userQuestionAnswer.findMany({
       where: {
         userId: ctx.session.user.id,
       },
-      _avg: {
-        score: true,
+      select: {
+        isCorrect: true,
       },
     });
+
+    const totalAnswers = userAnswers.length;
+    const correctAnswers = userAnswers.filter(answer => answer.isCorrect).length;
+    const averageScore = totalAnswers > 0 ? Math.round((correctAnswers / totalAnswers) * 100) : 0;
 
     // 获取用户成就数量
     const achievementsCount = await ctx.db.userAchievement.count({
@@ -231,7 +235,7 @@ export const pointsRouter = createTRPCRouter({
       userPoints,
       completedCourses,
       completedChapters,
-      averageScore: Math.round(averageScore._avg.score ?? 0),
+      averageScore,
       achievementsCount,
     };
   }),

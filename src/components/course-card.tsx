@@ -21,8 +21,8 @@ export function CourseCard({
 }: CourseCardProps) {
   // const { data: session } = useSession();
 
-  const progressPercentage = progress?.unlockedChapters?.length
-    ? (progress.unlockedChapters.length / course.chapters.length) * 100
+  const progressPercentage = progress?.chapterProgresses?.length
+    ? (progress.chapterProgresses.filter(p => p.status === "COMPLETED").length / course.chapters.length) * 100
     : 0;
 
   return (

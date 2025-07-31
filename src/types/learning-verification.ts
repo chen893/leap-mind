@@ -3,6 +3,7 @@ import {
   type Prisma,
   type PointsReason,
   type AchievementCategory,
+  type ChapterStatus,
 } from "@prisma/client";
 
 // 学习验证相关类型
@@ -16,12 +17,39 @@ export interface EvaluationResult {
   suggestions: string[];
 }
 
-export interface AssessmentFeedback {
+export interface ChapterAssessmentResult {
   totalQuestions: number;
   passedQuestions: number;
   passRate: number;
   canProgress: boolean;
   evaluationResults: EvaluationResult[];
+}
+
+// 用户章节进度相关类型
+export interface UserChapterProgressData {
+  id: string;
+  userId: string;
+  courseId: string;
+  chapterId: string;
+  status: ChapterStatus;
+  unlockedAt: Date | null;
+  completedAt: Date | null;
+}
+
+// 章节完成请求类型
+export interface CompleteChapterRequest {
+  userId: string;
+  courseId: string;
+  chapterId: string;
+}
+
+// 章节完成响应类型
+export interface CompleteChapterResponse {
+  success: boolean;
+  message: string;
+  chapterProgress: UserChapterProgressData;
+  nextChapterUnlocked: boolean;
+  pointsEarned: number;
 }
 
 // 积分更新上下文类型

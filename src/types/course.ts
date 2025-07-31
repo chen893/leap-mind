@@ -8,7 +8,10 @@ export type UserCourseProgress = RouterOutputs["course"]["getUserCourses"][0];
 // 组件专用类型
 export interface CourseHeaderProps {
   course: Course;
-  userProgress?: UserCourseProgress;
+  chapterProgresses?: Array<{
+    chapterId: string;
+    status: "LOCKED" | "UNLOCKED" | "COMPLETED";
+  }>;
   isCreator: boolean;
   onCourseUpdate: () => void;
 }
@@ -16,7 +19,10 @@ export interface CourseHeaderProps {
 export interface ChapterListProps {
   chapters: Chapter[];
   selectedChapter: Chapter;
-  unlockedChapters: number[];
+  chapterProgresses: Array<{
+    chapterId: string;
+    status: "LOCKED" | "UNLOCKED" | "COMPLETED";
+  }>;
   onChapterSelect: (chapterNumber: number) => void;
 }
 
@@ -35,7 +41,10 @@ export interface CourseCardProps {
   };
   progress?: {
     status: string;
-    unlockedChapters: number[];
+    chapterProgresses: Array<{
+      chapterId: string;
+      status: "LOCKED" | "UNLOCKED" | "COMPLETED";
+    }>;
   };
   showProgress?: boolean;
 }

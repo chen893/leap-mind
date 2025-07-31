@@ -59,11 +59,8 @@ const difficultyLabels: Record<Difficulty, string> = {
 export function SocraticQuestion({
   question,
   answer,
-  result,
-  evaluation,
   questionIndex,
   totalQuestions,
-  isEvaluating = false,
   showHints = false,
   retryCount = 0,
   onAnswerChange,
@@ -71,9 +68,8 @@ export function SocraticQuestion({
   onNext,
   onToggleHints,
 }: SocraticQuestionProps) {
-  const progress = ((questionIndex + 1) / totalQuestions) * 100;
   const hasAnswer = answer.trim().length >= 10;
-  const isAnswered = evaluation !== undefined;
+  const evaluation = question.userAnswers[0];
 
   return (
     <div className="max-h-[70vh] min-w-[50vw] space-y-6 overflow-auto p-6">
@@ -215,12 +211,12 @@ export function SocraticQuestion({
                     <Badge
                       variant={evaluation.isCorrect ? "default" : "destructive"}
                     >
-                      {evaluation.score || 0} 分
+                      {evaluation.aiScore ?? 0} 分
                     </Badge>
                   </div>
 
                   {/* AI 反馈 */}
-                  {evaluation.feedback && (
+                  {evaluation.aiFeedback && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="h-1 w-1 rounded-full bg-blue-500" />
@@ -229,14 +225,14 @@ export function SocraticQuestion({
                         </span>
                       </div>
                       <p className="pl-3 text-sm leading-relaxed text-gray-700">
-                        {evaluation.feedback}
+                        {evaluation.aiFeedback}
                       </p>
                     </div>
                   )}
 
                   {/* 改进建议 */}
-                  {evaluation.suggestions &&
-                    evaluation.suggestions.length > 0 && (
+                  {evaluation.aiSuggestions &&
+                    evaluation.aiSuggestions?.length > 0 && (
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <div className="h-1 w-1 rounded-full bg-blue-500" />
@@ -245,7 +241,7 @@ export function SocraticQuestion({
                           </span>
                         </div>
                         <ul className="space-y-1 pl-3">
-                          {evaluation.suggestions.map((suggestion, index) => (
+                          {evaluation.aiSuggestions.map((suggestion, index) => (
                             <li
                               key={index}
                               className="flex items-start gap-2 text-sm text-gray-700"

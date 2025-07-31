@@ -8,14 +8,13 @@ import { ChapterContent } from "@/components/chapter-content";
 import { AIChatPanel } from "@/components/ai-chat-panel";
 import { LearningVerificationDialog } from "@/components/learning-verification/LearningVerificationDialog";
 import { MessageCircle } from "lucide-react";
-import { useButtonState } from "@/store/ui-store";
 import { api } from "@/trpc/react";
 import type { CourseContentAreaProps } from "@/types/components";
 
 export function CourseContentArea({
   courseId,
   selectedChapterNumber,
-  unlockedChapters,
+  chapterProgresses,
   selectNextChapter,
 }: CourseContentAreaProps) {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
@@ -37,11 +36,15 @@ export function CourseContentArea({
     },
   );
   const [showChat, setShowChat] = useState(false);
-  const chatToggleButtonState = useButtonState("toggle-chat");
 
-  const isUnlocked = selectedChapterNumber
-    ? unlockedChapters.includes(selectedChapterNumber)
-    : false;
+  // 检查章节是否解锁
+  const chapterProgress = chapterProgresses.find(
+    (p) => p.chapterId === selectedChapter?.id,
+  );
+  const isUnlocked =
+    chapterProgress?.status === "UNLOCKED" ||
+    chapterProgress?.status === "COMPLETED" ||
+    selectedChapterNumber === 1;
 
   if (isLoading) {
     return <div>Loading...</div>;

@@ -24,12 +24,12 @@ import {
   XCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { AssessmentResult } from "@/types/store";
+import type { ChapterAssessmentResult } from "@/types/store";
 
 interface AssessmentResultDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  assessmentResult: AssessmentResult | null;
+  assessmentResult: ChapterAssessmentResult | null;
   onComplete: () => void;
   onRetry: () => void;
 }

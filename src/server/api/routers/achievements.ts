@@ -72,19 +72,30 @@ export const achievementsRouter = createTRPCRouter({
       },
     });
 
-    const completedChapters = await ctx.db.assessment.count({
+    const completedChapters = await ctx.db.userChapterProgress.count({
       where: {
         userId,
-        canProgress: true,
+        status: "COMPLETED",
       },
     });
 
-    const perfectScores = await ctx.db.assessment.count({
-      where: {
-        userId,
-        score: 100,
-      },
-    });
+    // 计算完美分数次数 - 通过UserQuestionAnswer表统计
+    // 完美分数定义：章节中所有问题都正确回答
+    const perfectScores = await ctx.db.$queryRaw<[{count: bigint}]>`
+      SELECT COUNT(DISTINCT chapter_id) as count
+      FROM (
+        SELECT 
+          cq."chapterId" as chapter_id,
+          COUNT(*) as total_questions,
+          COUNT(CASE WHEN uqa."isCorrect" = true THEN 1 END) as correct_answers
+        FROM "ChapterQuestion" cq
+        LEFT JOIN "UserQuestionAnswer" uqa ON cq.id = uqa."questionId" AND uqa."userId" = ${userId}
+        GROUP BY cq."chapterId"
+        HAVING COUNT(*) = COUNT(CASE WHEN uqa."isCorrect" = true THEN 1 END)
+          AND COUNT(CASE WHEN uqa."isCorrect" = true THEN 1 END) > 0
+      ) perfect_chapters
+    `;
+    const perfectScoreCount = Number(perfectScores[0]?.count ?? 0);
 
     // 获取所有成就定义
     const achievements = await ctx.db.achievement.findMany();
@@ -138,7 +149,7 @@ export const achievementsRouter = createTRPCRouter({
           shouldUnlock = (userPoints?.level ?? 1) >= 25;
           break;
         case "PERFECT_SCORE_10_TIMES":
-          shouldUnlock = perfectScores >= 10;
+          shouldUnlock = perfectScoreCount >= 10;
           break;
         case "STREAK_7_DAYS":
           shouldUnlock = (userPoints?.streak ?? 0) >= 7;

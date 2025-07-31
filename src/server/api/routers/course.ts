@@ -73,9 +73,22 @@ export const courseRouter = createTRPCRouter({
             userId: ctx.session.user.id,
             courseId: course.id,
             status: "IN_PROGRESS",
-            unlockedChapters: [1], // 默认解锁第一章
           },
         });
+
+        // 解锁第一章
+        const firstChapter = chapters[0];
+        if (firstChapter) {
+          await ctx.db.userChapterProgress.create({
+            data: {
+              userId: ctx.session.user.id,
+              chapterId: firstChapter.id,
+              courseId: course.id,
+              status: "UNLOCKED",
+              unlockedAt: new Date(),
+            },
+          });
+        }
 
         return {
           course,

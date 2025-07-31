@@ -1,4 +1,4 @@
-import type { Chapter } from "@prisma/client";
+import type { Chapter, UserChapterProgress } from "@prisma/client";
 import type {
   LeaderboardEntry,
   UserStats,
@@ -12,14 +12,14 @@ import type { Course, UserCourseProgress } from "@prisma/client";
 export interface ChapterListProps {
   chapters: Chapter[];
   selectedChapterNumber: number | null;
-  unlockedChapters: number[];
+  chapterProgresses: UserChapterProgress[];
   onChapterSelect: (chapterNumber: number) => void;
 }
 
 export interface CourseContentAreaProps {
   courseId: string;
   selectedChapterNumber: number | null;
-  unlockedChapters: number[];
+  chapterProgresses: UserChapterProgress[];
   selectNextChapter: (onlyRefresh?: boolean) => void;
 }
 
@@ -51,7 +51,7 @@ export interface CourseCardProps {
   };
   progress?: {
     status: string;
-    unlockedChapters: number[];
+    chapterProgresses?: UserChapterProgress[];
   };
   showProgress?: boolean;
 }
@@ -92,15 +92,7 @@ export interface SocraticQuestionProps {
   question: Questions[0];
   answer: string;
   result?: UserAnswer;
-  evaluation?: {
-    questionId: string;
-    questionText: string;
-    userAnswer: string;
-    score: number;
-    feedback: string;
-    isCorrect: boolean;
-    suggestions?: string[];
-  };
+
   questionIndex: number;
   totalQuestions: number;
   isEvaluating?: boolean;

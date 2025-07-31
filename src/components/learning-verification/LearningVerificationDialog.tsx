@@ -35,7 +35,9 @@ import { api } from "@/trpc/react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { LearningVerificationDialogProps } from "@/types/components";
-import type { AssessmentResult } from "@/types/store";
+import type { ChapterAssessmentResult } from "@/types/store";
+import type { ChapterQuestion } from "@prisma/client";
+import type { Questions } from "@/types/api";
 
 export function LearningVerificationDialog({
   open,
@@ -80,13 +82,37 @@ export function LearningVerificationDialog({
       { chapterId },
       { enabled: false },
     );
-  const getAssessment = api.learningVerification.getAssessment.useQuery(
-    { chapterId },
-    { enabled: false },
-  );
+  // 移除getAssessment调用，因为Assessment模型已被删除
   const evaluateAnswers =
     api.learningVerification.evaluateAnswers.useMutation();
 
+  // 回显已有的答案和评估结果
+  const updateQuestions = (chapterQuestions: Questions) => {
+    chapterQuestions.forEach((question) => {
+      if (question?.userAnswers && question?.userAnswers?.length > 0) {
+        const userAnswer = question.userAnswers[0]; // 取最新的答案
+        if (userAnswer) {
+          // 更新用户答案到store
+          updateUserAnswer(question.id, userAnswer.answer);
+
+          // 如果有评估结果，也设置到store
+          if (
+            userAnswer.aiScore !== null &&
+            userAnswer.aiFeedback !== null &&
+            userAnswer.isCorrect !== null
+          ) {
+            setQuestionResult(question.id, {
+              answer: userAnswer.answer,
+              isCorrect: userAnswer.isCorrect,
+              score: userAnswer.aiScore,
+              feedback: userAnswer.aiFeedback,
+              submittedAt: userAnswer.updatedAt,
+            });
+          }
+        }
+      }
+    });
+  };
   // 初始化问题
   useEffect(() => {
     const initializeQuestions = async () => {
@@ -100,46 +126,19 @@ export function LearningVerificationDialog({
         // 获取或生成问题（后端会自动判断是否需要生成）
         const questionsResult = await getOrGenerateQuestions.refetch();
         console.log("questionsResult", questionsResult);
-        if (questionsResult.data && questionsResult.data.length > 0) {
-          setCurrentQuestions(questionsResult.data);
+        const chapterQuestions = questionsResult.data?.chapterQuestions ?? [];
 
-          // 回显已有的答案和评估结果
-          questionsResult.data.forEach((question) => {
-            if (question?.userAnswers && question?.userAnswers?.length > 0) {
-              const userAnswer = question.userAnswers[0]; // 取最新的答案
-              if (userAnswer) {
-                // 更新用户答案到store
-                updateUserAnswer(question.id, userAnswer.answer);
-
-                // 如果有评估结果，也设置到store
-                if (
-                  userAnswer.aiScore !== null &&
-                  userAnswer.aiFeedback !== null &&
-                  userAnswer.isCorrect !== null
-                ) {
-                  setQuestionResult(question.id, {
-                    answer: userAnswer.answer,
-                    isCorrect: userAnswer.isCorrect,
-                    score: userAnswer.aiScore,
-                    feedback: userAnswer.aiFeedback,
-                    submittedAt: userAnswer.updatedAt,
-                  });
-                }
-              }
-            }
-          });
+        if (questionsResult.data && chapterQuestions.length > 0) {
+          setCurrentQuestions(chapterQuestions);
+          updateQuestions(chapterQuestions);
 
           // // 获取已有的评估结果
           try {
-            const assessmentResult = await getAssessment.refetch();
-            if (assessmentResult.data) {
-              // 如果有完整的评估结果，设置到store
-              const assessment = assessmentResult.data;
-              setAssessmentResult(assessment as unknown as AssessmentResult);
+            if (questionsResult.data) {
+              setAssessmentResult(questionsResult.data);
             }
           } catch (assessmentError) {
             console.log("No existing assessment found:", assessmentError);
-            // 没有评估结果是正常的，不需要报错
           }
         } else {
           setError("无法获取学习验证问题");
@@ -191,6 +190,7 @@ export function LearningVerificationDialog({
       });
       setAssessmentResult(result);
       setShowAssessmentResult(true);
+      updateQuestions(result.chapterQuestions);
 
       // 显示评估完成提示
       if (result.canProgress) {
@@ -251,16 +251,6 @@ export function LearningVerificationDialog({
 
   const currentQuestion = selectors.currentQuestion;
   const currentAnswer = selectors.currentAnswer;
-
-  // 获取当前问题的评估结果
-  const getCurrentQuestionEvaluation = () => {
-    if (!currentQuestion || !assessmentResult?.evaluationResults) {
-      return undefined;
-    }
-    return assessmentResult.evaluationResults.find(
-      (result) => result.questionId === currentQuestion.id,
-    );
-  };
 
   const currentResult = userAnswers[currentQuestion?.id ?? ""];
 
@@ -444,7 +434,6 @@ export function LearningVerificationDialog({
                             question={currentQuestion}
                             answer={currentAnswer}
                             result={currentResult}
-                            evaluation={getCurrentQuestionEvaluation()}
                             questionIndex={currentQuestionIndex}
                             totalQuestions={currentQuestions.length}
                             isEvaluating={isEvaluating}

@@ -13,7 +13,6 @@ import type {
   PointsHistory,
   Achievement,
   UserAchievement,
-  Assessment,
   CourseStatus,
   QuestionType,
   QuestionCategory,
@@ -32,11 +31,9 @@ export type SubmittedAnswer =
   RouterOutputs["learningVerification"]["submitAnswer"];
 export type EvaluationResult =
   RouterOutputs["learningVerification"]["evaluateAnswers"];
-export type AssessmentData =
-  RouterOutputs["learningVerification"]["getAssessment"];
 
 export type Questions =
-  RouterOutputs["learningVerification"]["getOrGenerateQuestions"];
+  RouterOutputs["learningVerification"]["getOrGenerateQuestions"]["chapterQuestions"];
 
 // Points Router
 export type UserPointsData = RouterOutputs["points"]["getUserPoints"];
@@ -130,11 +127,7 @@ export type UserQuestionAnswerWithRelations = UserQuestionAnswer & {
   question: PrismaChapterQuestion;
 };
 
-// Assessment with relations
-export type AssessmentWithRelations = Assessment & {
-  chapter: Chapter;
-  user: User;
-};
+// 移除Assessment相关类型，因为Assessment模型已被删除
 
 // UserPoints with relations
 export type UserPointsWithRelations = UserPoints & {

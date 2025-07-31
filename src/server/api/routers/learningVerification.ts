@@ -12,8 +12,12 @@ import { type PointsReason } from "@prisma/client";
 import { evaluateAnswer } from "@/lib/course-ai";
 import {
   type EvaluationResult,
-  type AssessmentFeedback,
+  type ChapterAssessmentResult,
+  type CompleteChapterRequest,
+  type CompleteChapterResponse,
+  type UserChapterProgressData,
 } from "@/types/learning-verification";
+import { type ChapterStatus } from "@prisma/client";
 
 // 积分更新结果类型
 interface PointsUpdateResult {
@@ -59,6 +63,22 @@ export const learningVerificationRouter = createTRPCRouter({
         throw new Error("Unauthorized");
       }
 
+      // 检查用户是否有权限访问此章节（是否已解锁）
+      if (chapter.course.creatorId !== ctx.session.user.id) {
+        const chapterProgress = await ctx.db.userChapterProgress.findUnique({
+          where: {
+            userId_chapterId: {
+              userId: ctx.session.user.id,
+              chapterId: input.chapterId,
+            },
+          },
+        });
+
+        if (!chapterProgress || chapterProgress.status === "LOCKED") {
+          throw new Error("Chapter is locked");
+        }
+      }
+
       // 首先尝试获取已存在的问题（包含用户答案）
       const existingQuestions = await ctx.db.chapterQuestion.findMany({
         where: { chapterId: input.chapterId },
@@ -72,9 +92,57 @@ export const learningVerificationRouter = createTRPCRouter({
         },
       });
 
-      // 如果已有问题，直接返回
+      // 如果已有问题，计算评估结果并返回
       if (existingQuestions.length > 0) {
-        return existingQuestions;
+        let totalScore = 0;
+        let passedQuestions = 0;
+        let answeredQuestions = 0;
+
+        // 处理每个问题的评估结果
+        for (const question of existingQuestions) {
+          const userAnswer = question.userAnswers[0];
+
+          if (userAnswer) {
+            answeredQuestions++;
+            const score = userAnswer.aiScore ?? 0;
+            const isCorrect = userAnswer.isCorrect ?? false;
+
+            totalScore += score;
+            if (isCorrect) {
+              passedQuestions++;
+            }
+          }
+        }
+
+        const averageScore =
+          answeredQuestions > 0
+            ? Math.round(totalScore / answeredQuestions)
+            : 0;
+        const passRate =
+          answeredQuestions > 0 ? passedQuestions / answeredQuestions : 0;
+        const canProgress =
+          passRate >= 0.6 && answeredQuestions === existingQuestions.length;
+
+        // 计算积分奖励
+        let pointsEarned = 0;
+        if (canProgress) {
+          pointsEarned = Math.max(10, Math.round(averageScore / 2));
+          if (averageScore >= 90) pointsEarned += 20;
+          if (passRate === 1) pointsEarned += 10;
+        }
+
+        const feedback =
+          answeredQuestions === existingQuestions.length
+            ? `您的平均分数为 ${averageScore}，通过率为 ${Math.round(passRate * 100)}%`
+            : `还有 ${existingQuestions.length - answeredQuestions} 个问题未完成`;
+
+        return {
+          canProgress,
+          totalScore: averageScore,
+          pointsEarned,
+          feedback,
+          chapterQuestions: existingQuestions,
+        };
       }
 
       // 如果没有问题，则生成新问题
@@ -112,7 +180,14 @@ export const learningVerificationRouter = createTRPCRouter({
             }),
           ),
         );
-        return savedQuestions;
+
+        return {
+          canProgress: false,
+          totalScore: 0,
+          pointsEarned: 0,
+          feedback: "请完成所有问题的回答",
+          chapterQuestions: savedQuestions,
+        };
       } catch (error) {
         console.error("Failed to generate questions:", error);
         throw new Error("生成问题失败，请稍后重试");
@@ -304,7 +379,7 @@ export const learningVerificationRouter = createTRPCRouter({
         }
       }
 
-      const evaluationResults = [];
+      const chapterQuestions = [];
       let totalScore = 0;
       let passedQuestions = 0;
 
@@ -353,19 +428,10 @@ export const learningVerificationRouter = createTRPCRouter({
                 aiScore: evaluation.score,
                 aiFeedback: evaluation.feedback,
                 isCorrect: evaluation.isCorrect,
+                aiSuggestions: evaluation.suggestions,
               },
             });
           }
-
-          evaluationResults.push({
-            questionId: question.id,
-            questionText: question.questionText,
-            userAnswer: answerText,
-            score: evaluation.score,
-            feedback: evaluation.feedback,
-            isCorrect: evaluation.isCorrect,
-            suggestions: evaluation.suggestions,
-          });
 
           totalScore += evaluation.score;
           if (evaluation.isCorrect) {
@@ -378,16 +444,6 @@ export const learningVerificationRouter = createTRPCRouter({
         for (const question of questions) {
           const answerText = input.answers[question.id];
           if (!answerText) continue;
-
-          evaluationResults.push({
-            questionId: question.id,
-            questionText: question.questionText,
-            userAnswer: answerText,
-            score: 60,
-            feedback: "评估服务暂时不可用，请稍后重试",
-            isCorrect: false,
-            suggestions: ["请稍后重新提交答案进行评估"],
-          });
         }
       }
 
@@ -403,49 +459,62 @@ export const learningVerificationRouter = createTRPCRouter({
         if (passRate === 1) pointsEarned += 10; // 全部通过奖励
       }
 
-      // 创建评估记录
-      const assessment = await ctx.db.assessment.create({
-        data: {
-          chapterId: input.chapterId,
-          userId: ctx.session.user.id,
-          userAnswersJson: evaluationResults,
-          score: averageScore,
-          feedbackJson: {
-            totalQuestions: questions.length,
-            passedQuestions,
-            passRate,
-            canProgress,
-            evaluationResults,
-          },
-          canProgress,
-          pointsEarned,
-        },
-      });
+      // 不再创建Assessment记录，直接返回评估结果
 
-      // 如果通过验证，解锁下一章节
+      // 如果通过验证，更新章节进度
       if (canProgress) {
         const chapter = questions[0]?.chapter;
         if (chapter) {
-          const progress = await ctx.db.userCourseProgress.findUnique({
+          // 更新当前章节状态为完成
+          await ctx.db.userChapterProgress.upsert({
             where: {
-              userId_courseId: {
+              userId_chapterId: {
                 userId: ctx.session.user.id,
-                courseId: chapter.courseId,
+                chapterId: input.chapterId,
               },
+            },
+            update: {
+              status: "COMPLETED",
+              completedAt: new Date(),
+            },
+            create: {
+              userId: ctx.session.user.id,
+              courseId: chapter.courseId,
+              chapterId: input.chapterId,
+              status: "COMPLETED",
+              unlockedAt: new Date(),
+              completedAt: new Date(),
             },
           });
 
-          if (progress) {
-            const nextChapter = chapter.chapterNumber + 1;
-            const unlockedChapters = progress.unlockedChapters;
-            if (!unlockedChapters.includes(nextChapter)) {
-              await ctx.db.userCourseProgress.update({
-                where: { id: progress.id },
-                data: {
-                  unlockedChapters: [...unlockedChapters, nextChapter],
+          // 解锁下一章节
+          const nextChapter = await ctx.db.chapter.findFirst({
+            where: {
+              courseId: chapter.courseId,
+              chapterNumber: chapter.chapterNumber + 1,
+            },
+          });
+
+          if (nextChapter) {
+            await ctx.db.userChapterProgress.upsert({
+              where: {
+                userId_chapterId: {
+                  userId: ctx.session.user.id,
+                  chapterId: nextChapter.id,
                 },
-              });
-            }
+              },
+              update: {
+                status: "UNLOCKED",
+                unlockedAt: new Date(),
+              },
+              create: {
+                userId: ctx.session.user.id,
+                courseId: chapter.courseId,
+                chapterId: nextChapter.id,
+                status: "UNLOCKED",
+                unlockedAt: new Date(),
+              },
+            });
           }
         }
 
@@ -453,45 +522,124 @@ export const learningVerificationRouter = createTRPCRouter({
         await updateUserPoints(ctx, pointsEarned, "CHAPTER_COMPLETION");
       }
 
+      // 首先尝试获取已存在的问题（包含用户答案）
+      const existingQuestions = await ctx.db.chapterQuestion.findMany({
+        where: { chapterId: input.chapterId },
+        orderBy: { questionNumber: "asc" },
+        include: {
+          userAnswers: {
+            where: { userId: ctx.session.user.id },
+            orderBy: { createdAt: "desc" },
+            take: 1,
+          },
+        },
+      });
+
       return {
         canProgress,
         totalScore: averageScore,
         pointsEarned,
         feedback: `您的平均分数为 ${averageScore}，通过率为 ${Math.round(passRate * 100)}%`,
-        evaluationResults,
+        chapterQuestions: existingQuestions,
       };
     }),
 
-  // 获取评估结果
-  getAssessment: protectedProcedure
+  // 获取章节进度
+  getChapterProgress: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .query(async ({ ctx, input }) => {
-      const assessment = await ctx.db.assessment.findFirst({
+      const progress = await ctx.db.userChapterProgress.findUnique({
         where: {
-          chapterId: input.chapterId,
-          userId: ctx.session.user.id,
+          userId_chapterId: {
+            userId: ctx.session.user.id,
+            chapterId: input.chapterId,
+          },
         },
-        orderBy: { createdAt: "desc" },
+        include: {
+          chapter: {
+            include: {
+              course: true,
+            },
+          },
+        },
       });
-      if (!assessment?.feedbackJson) {
-        return null;
+
+      return progress;
+    }),
+
+  // 获取用户在课程中的所有章节进度
+  getCourseProgress: protectedProcedure
+    .input(z.object({ courseId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const progresses = await ctx.db.userChapterProgress.findMany({
+        where: {
+          userId: ctx.session.user.id,
+          courseId: input.courseId,
+        },
+        include: {
+          chapter: true,
+        },
+        orderBy: {
+          chapter: {
+            chapterNumber: "asc",
+          },
+        },
+      });
+
+      return progresses;
+    }),
+
+  // 初始化用户课程进度（加入课程时调用）
+  initializeCourseProgress: protectedProcedure
+    .input(z.object({ courseId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // 创建用户课程进度记录
+      const courseProgress = await ctx.db.userCourseProgress.upsert({
+        where: {
+          userId_courseId: {
+            userId: ctx.session.user.id,
+            courseId: input.courseId,
+          },
+        },
+        update: {},
+        create: {
+          userId: ctx.session.user.id,
+          courseId: input.courseId,
+          status: "IN_PROGRESS",
+        },
+      });
+
+      // 解锁第一章
+      const firstChapter = await ctx.db.chapter.findFirst({
+        where: {
+          courseId: input.courseId,
+          chapterNumber: 1,
+        },
+      });
+
+      if (firstChapter) {
+        await ctx.db.userChapterProgress.upsert({
+          where: {
+            userId_chapterId: {
+              userId: ctx.session.user.id,
+              chapterId: firstChapter.id,
+            },
+          },
+          update: {
+            status: "UNLOCKED",
+            unlockedAt: new Date(),
+          },
+          create: {
+            userId: ctx.session.user.id,
+            courseId: input.courseId,
+            chapterId: firstChapter.id,
+            status: "UNLOCKED",
+            unlockedAt: new Date(),
+          },
+        });
       }
-      // return assessment;
-      console.log(
-        "assessment?.feedbackJson",
-        typeof assessment?.feedbackJson,
-        assessment?.feedbackJson,
-      );
-      // const passRate = JSON.parse(assessment?.feedbackJson)?.passRate;
-      const passRate = (assessment?.feedbackJson as { passRate: number })
-        .passRate;
-      return {
-        canProgress: assessment?.canProgress,
-        totalScore: assessment?.score,
-        pointsEarned: assessment?.pointsEarned,
-        feedback: `您的平均分数为 ${assessment?.score}，通过率为 ${Math.round(passRate * 100)}%`,
-        evaluationResults: assessment?.userAnswersJson,
-      };
+
+      return courseProgress;
     }),
 });
 

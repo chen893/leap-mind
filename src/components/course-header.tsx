@@ -9,7 +9,7 @@ import { type CourseHeaderProps } from "@/types/course";
 
 export function CourseHeader({
   course,
-  userProgress,
+  chapterProgresses,
   isCreator,
   onCourseUpdate,
 }: CourseHeaderProps) {
@@ -33,14 +33,17 @@ export function CourseHeader({
     },
   });
 
-  const unlockedChapters = userProgress?.unlockedChapters ?? [1];
-  const progressPercentage = course
-    ? (unlockedChapters.length / course.chapters.length) * 100
-    : 0;
+  // 暂时设置进度为0，实际应该通过UserChapterProgress计算
 
   const handlePublish = () => {
     publishMutation.mutate({ courseId: course.id });
   };
+
+  const progressPercentage = chapterProgresses?.length
+    ? (chapterProgresses.filter((p) => p.status === "COMPLETED").length /
+        course.chapters.length) *
+      100
+    : 0;
 
   return (
     <div className="mb-6">
@@ -86,7 +89,7 @@ export function CourseHeader({
         )}
       </div>
 
-      {userProgress && (
+      {chapterProgresses && (
         <div className="flex items-center space-x-4">
           <div className="flex-1">
             <div className="mb-1 flex justify-between text-sm">

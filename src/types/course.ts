@@ -3,7 +3,6 @@ import type { RouterOutputs } from "@/trpc/react";
 // 基础类型
 export type Course = RouterOutputs["course"]["getById"];
 export type Chapter = Course["chapters"][0];
-export type UserCourseProgress = RouterOutputs["course"]["getUserCourses"][0];
 
 // 组件专用类型
 export interface CourseHeaderProps {
@@ -36,7 +35,7 @@ export interface CourseCardProps {
       name: string | null;
       image: string | null;
     };
-    chapters: Pick<Chapter, "id" | "title">[];
+    chapters?: Pick<Chapter, "id" | "title">[];
     joinedByCount?: number;
   };
   progress?: {
@@ -45,6 +44,11 @@ export interface CourseCardProps {
       chapterId: string;
       status: "LOCKED" | "UNLOCKED" | "COMPLETED";
     }>;
+  };
+  stats?: {
+    totalChapters: number;
+    completedChapters: number;
+    progressPercentage: number;
   };
   showProgress?: boolean;
 }

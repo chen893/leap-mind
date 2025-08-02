@@ -13,12 +13,91 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
-import { BookOpen, Plus, TrendingUp, Clock } from "lucide-react";
+import { BookOpen, Plus, TrendingUp, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
+import { useMemo } from "react";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
-  const { data: userCourses, isLoading } = api.course.getUserCourses.useQuery();
+
+  // 学习中的课程查询
+  const {
+    data: inProgressData,
+    isLoading: inProgressLoading,
+    fetchNextPage: fetchNextInProgress,
+    hasNextPage: hasNextInProgress,
+    isFetchingNextPage: isFetchingNextInProgress,
+  } = api.course.getUserCourses.useInfiniteQuery(
+    {
+      limit: 10,
+      status: "IN_PROGRESS",
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  // 已完成的课程查询
+  const {
+    data: completedData,
+    isLoading: completedLoading,
+    fetchNextPage: fetchNextCompleted,
+    hasNextPage: hasNextCompleted,
+    isFetchingNextPage: isFetchingNextCompleted,
+  } = api.course.getUserCourses.useInfiniteQuery(
+    {
+      limit: 10,
+      status: "COMPLETED",
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  // 我创建的课程查询
+  const {
+    data: createdData,
+    isLoading: createdLoading,
+    fetchNextPage: fetchNextCreated,
+    hasNextPage: hasNextCreated,
+    isFetchingNextPage: isFetchingNextCreated,
+  } = api.course.getUserCourses.useInfiniteQuery(
+    {
+      limit: 10,
+      createdByMe: true,
+    },
+    {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
+    },
+  );
+
+  // 合并各标签页的分页数据
+  const inProgressCourses = useMemo(() => {
+    return inProgressData?.pages.flatMap((page) => page.courses) ?? [];
+  }, [inProgressData]);
+
+  const completedCourses = useMemo(() => {
+    return completedData?.pages.flatMap((page) => page.courses) ?? [];
+  }, [completedData]);
+
+  const createdCourses = useMemo(() => {
+    return createdData?.pages.flatMap((page) => page.courses) ?? [];
+  }, [createdData]);
+
+  // 计算总体统计数据
+  const { totalChapters, completedChapters } = useMemo(() => {
+    const allCourses = [...inProgressCourses, ...completedCourses];
+    const total = allCourses.reduce((sum, p) => sum + p.stats.totalChapters, 0);
+    const completedTotal = allCourses.reduce(
+      (sum, p) => sum + p.stats.completedChapters,
+      0,
+    );
+
+    return {
+      totalChapters: total,
+      completedChapters: completedTotal,
+    };
+  }, [inProgressCourses, completedCourses]);
 
   if (!session) {
     return (
@@ -32,31 +111,7 @@ export default function DashboardPage() {
     );
   }
 
-  const inProgressCourses =
-    userCourses?.filter((p) => p.status === "IN_PROGRESS") ?? [];
-  const completedCourses =
-    userCourses?.filter((p) => p.status === "COMPLETED") ?? [];
-  const createdCourses =
-    userCourses?.filter((p) => p.course.creatorId === session.user.id) ?? [];
-
-  const totalChapters =
-    userCourses?.reduce((sum, p) => sum + p.course.chapters.length, 0) ?? 0;
-  
-  // 获取所有课程的章节进度数据
-  const allChapterProgresses = userCourses?.map(course => 
-    api.learningVerification.getCourseProgress.useQuery(
-      { courseId: course.course.id },
-      { enabled: !!course.course.id }
-    )
-  ) ?? [];
-  
-  // 计算已完成的章节数量
-  const completedChapters = allChapterProgresses.reduce((total, query) => {
-    if (query.data) {
-      return total + query.data.filter(progress => progress.status === "COMPLETED").length;
-    }
-    return total;
-  }, 0);
+  const isLoading = inProgressLoading || completedLoading || createdLoading;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -152,7 +207,7 @@ export default function DashboardPage() {
           </TabsList>
 
           <TabsContent value="learning" className="mt-6">
-            {isLoading ? (
+            {inProgressLoading ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="animate-pulse">
@@ -165,29 +220,48 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : inProgressCourses.length > 0 ? (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {inProgressCourses.map((progress, index) => {
-                  const courseProgressQuery = allChapterProgresses[userCourses?.findIndex(p => p.course.id === progress.course.id) ?? -1];
-                  const chapterProgresses = courseProgressQuery?.data ?? [];
-                  
-                  return (
-                    <CourseCard
-                      key={progress.course.id}
-                      course={progress.course}
-                      progress={{
-                        status: progress.status,
-                        chapterProgresses: progress.course.chapters.map(chapter => {
-                          const chapterProgress = chapterProgresses.find(cp => cp.chapterId === chapter.id);
-                          return {
-                            chapterId: chapter.id,
-                            status: chapterProgress?.status ?? "LOCKED" as const
-                          };
-                        })
-                      }}
-                      showProgress={true}
-                    />
-                  );
-                })}
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {inProgressCourses.map((progress) => {
+                    return (
+                      <CourseCard
+                        key={progress.course.id}
+                        course={progress.course}
+                        progress={{
+                          status: progress.status,
+                          chapterProgresses: progress.chapterProgresses.map(
+                            (cp) => ({
+                              chapterId: cp.chapterId,
+                              status: cp.status,
+                            }),
+                          ),
+                        }}
+                        showProgress={true}
+                        stats={progress.stats}
+                      />
+                    );
+                  })}
+                </div>
+                {/* 加载更多按钮 */}
+                {hasNextInProgress && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => fetchNextInProgress()}
+                      disabled={isFetchingNextInProgress}
+                      variant="outline"
+                      className="min-w-[120px]"
+                    >
+                      {isFetchingNextInProgress ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          加载中...
+                        </>
+                      ) : (
+                        "加载更多"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-12 text-center">
@@ -209,30 +283,61 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="completed" className="mt-6">
-            {completedCourses.length > 0 ? (
+            {completedLoading ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {completedCourses.map((progress) => {
-                  const courseProgressQuery = allChapterProgresses[userCourses?.findIndex(p => p.course.id === progress.course.id) ?? -1];
-                  const chapterProgresses = courseProgressQuery?.data ?? [];
-                  
-                  return (
-                    <CourseCard
-                      key={progress.course.id}
-                      course={progress.course}
-                      progress={{
-                        status: progress.status,
-                        chapterProgresses: progress.course.chapters.map(chapter => {
-                          const chapterProgress = chapterProgresses.find(cp => cp.chapterId === chapter.id);
-                          return {
-                            chapterId: chapter.id,
-                            status: chapterProgress?.status ?? "LOCKED" as const
-                          };
-                        })
-                      }}
-                      showProgress={true}
-                    />
-                  );
-                })}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="rounded-lg bg-white p-6">
+                      <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
+                      <div className="mb-4 h-3 w-full rounded bg-gray-200"></div>
+                      <div className="h-3 w-2/3 rounded bg-gray-200"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : completedCourses.length > 0 ? (
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {completedCourses.map((progress) => {
+                    return (
+                      <CourseCard
+                        key={progress.course.id}
+                        course={progress.course}
+                        progress={{
+                          status: progress.status,
+                          chapterProgresses: progress.chapterProgresses.map(
+                            (cp) => ({
+                              chapterId: cp.chapterId,
+                              status: cp.status,
+                            }),
+                          ),
+                        }}
+                        showProgress={true}
+                        stats={progress.stats}
+                      />
+                    );
+                  })}
+                </div>
+                {/* 加载更多按钮 */}
+                {hasNextCompleted && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => fetchNextCompleted()}
+                      disabled={isFetchingNextCompleted}
+                      variant="outline"
+                      className="min-w-[120px]"
+                    >
+                      {isFetchingNextCompleted ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          加载中...
+                        </>
+                      ) : (
+                        "加载更多"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-12 text-center">
@@ -246,30 +351,61 @@ export default function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="created" className="mt-6">
-            {createdCourses.length > 0 ? (
+            {createdLoading ? (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {createdCourses.map((progress) => {
-                  const courseProgressQuery = allChapterProgresses[userCourses?.findIndex(p => p.course.id === progress.course.id) ?? -1];
-                  const chapterProgresses = courseProgressQuery?.data ?? [];
-                  
-                  return (
-                    <CourseCard
-                      key={progress.course.id}
-                      course={progress.course}
-                      progress={{
-                        status: progress.status,
-                        chapterProgresses: progress.course.chapters.map(chapter => {
-                          const chapterProgress = chapterProgresses.find(cp => cp.chapterId === chapter.id);
-                          return {
-                            chapterId: chapter.id,
-                            status: chapterProgress?.status ?? "LOCKED" as const
-                          };
-                        })
-                      }}
-                      showProgress={true}
-                    />
-                  );
-                })}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="animate-pulse">
+                    <div className="rounded-lg bg-white p-6">
+                      <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
+                      <div className="mb-4 h-3 w-full rounded bg-gray-200"></div>
+                      <div className="h-3 w-2/3 rounded bg-gray-200"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : createdCourses.length > 0 ? (
+              <div className="space-y-6">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {createdCourses.map((progress) => {
+                    return (
+                      <CourseCard
+                        key={progress.course.id}
+                        course={progress.course}
+                        progress={{
+                          status: progress.status,
+                          chapterProgresses: progress.chapterProgresses.map(
+                            (cp) => ({
+                              chapterId: cp.chapterId,
+                              status: cp.status,
+                            }),
+                          ),
+                        }}
+                        showProgress={true}
+                        stats={progress.stats}
+                      />
+                    );
+                  })}
+                </div>
+                {/* 加载更多按钮 */}
+                {hasNextCreated && (
+                  <div className="text-center">
+                    <Button
+                      onClick={() => fetchNextCreated()}
+                      disabled={isFetchingNextCreated}
+                      variant="outline"
+                      className="min-w-[120px]"
+                    >
+                      {isFetchingNextCreated ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          加载中...
+                        </>
+                      ) : (
+                        "加载更多"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="py-12 text-center">

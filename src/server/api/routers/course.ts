@@ -102,36 +102,105 @@ export const courseRouter = createTRPCRouter({
     }),
 
   // 获取用户的课程列表
-  getUserCourses: protectedProcedure.query(async ({ ctx }) => {
-    const progresses = await ctx.db.userCourseProgress.findMany({
-      where: {
-        userId: ctx.session.user.id,
-      },
-      include: {
-        course: {
-          include: {
-            creator: {
-              select: {
-                id: true,
-                name: true,
-                image: true,
-              },
-            },
+  getUserCourses: protectedProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().min(1).max(50).default(20),
+          cursor: z.string().optional(),
+          status: z.enum(["IN_PROGRESS", "COMPLETED"]).optional(),
+          createdByMe: z.boolean().optional(),
+        })
+        .optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      const { limit = 20, cursor, status, createdByMe } = input ?? {};
 
-            chapters: {
-              orderBy: {
-                chapterNumber: "asc",
+      // 构建查询条件
+      const whereCondition: {
+        userId: string;
+        status?: "IN_PROGRESS" | "COMPLETED";
+        course?: {
+          creatorId: string;
+        };
+      } = {
+        userId: ctx.session.user.id,
+      };
+
+      if (status) {
+        whereCondition.status = status;
+      }
+
+      if (createdByMe) {
+        whereCondition.course = {
+          creatorId: ctx.session.user.id,
+        };
+      }
+
+      const progresses = await ctx.db.userCourseProgress.findMany({
+        where: whereCondition,
+        include: {
+          course: {
+            include: {
+              creator: {
+                select: {
+                  id: true,
+                  name: true,
+                  image: true,
+                },
+              },
+              _count: {
+                select: {
+                  chapters: true,
+                },
               },
             },
           },
+          chapterProgresses: {
+            select: {
+              chapterId: true,
+              status: true,
+            },
+          },
         },
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
-    return progresses;
-  }),
+        orderBy: {
+          updatedAt: "desc",
+        },
+        take: limit + 1,
+        cursor: cursor ? { id: cursor } : undefined,
+      });
+
+      let nextCursor: typeof cursor | undefined = undefined;
+      if (progresses.length > limit) {
+        const nextItem = progresses.pop();
+        nextCursor = nextItem!.id;
+      }
+
+      // 为每个课程计算统计信息
+      const progressesWithStats = progresses.map((progress) => {
+        const totalChapters = progress.course._count.chapters;
+        const completedChapters = progress.chapterProgresses.filter(
+          (cp) => cp.status === "COMPLETED",
+        ).length;
+
+        return {
+          ...progress,
+          stats: {
+            totalChapters,
+            completedChapters,
+            progressPercentage:
+              totalChapters > 0
+                ? Math.round((completedChapters / totalChapters) * 100)
+                : 0,
+          },
+        };
+      });
+
+      return {
+        courses: progressesWithStats,
+        nextCursor,
+      };
+    }),
 
   // 获取单个课程详情
   getById: publicProcedure

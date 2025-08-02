@@ -106,6 +106,7 @@ export function LearningVerificationDialog({
               isCorrect: userAnswer.isCorrect,
               score: userAnswer.aiScore,
               feedback: userAnswer.aiFeedback,
+
               submittedAt: userAnswer.updatedAt,
             });
           }

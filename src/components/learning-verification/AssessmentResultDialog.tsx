@@ -112,13 +112,13 @@ export function AssessmentResultDialog({
                         {assessmentResult.totalScore}
                       </div>
                       <div className="text-base font-medium text-gray-600">
-                        总分
+                        分数
                       </div>
                     </div>
                     {assessmentResult.pointsEarned > 0 && (
                       <div className="text-center">
                         <div className="mb-2 flex items-center justify-center gap-2 text-4xl font-bold text-yellow-600">
-                          <Star className="h-8 w-8" />+
+                          <Star className="h-8 w-8" />
                           {assessmentResult.pointsEarned}
                         </div>
                         <div className="text-base font-medium text-gray-600">

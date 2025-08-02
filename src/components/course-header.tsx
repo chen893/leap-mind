@@ -2,6 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Globe, Share2 } from "lucide-react";
 import { api } from "@/trpc/react";
 import { useToast } from "@/components/ui/use-toast";
@@ -52,7 +58,18 @@ export function CourseHeader({
           <h1 className="mb-2 text-3xl font-bold text-gray-900">
             {course.title}
           </h1>
-          <p className="mb-4 text-gray-600">{course.description}</p>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <p className="mb-4 line-clamp-2 cursor-help text-gray-600">
+                  {course.description}
+                </p>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p className="max-w-xs">{course.description}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
 
         {/* 发布按钮 - 只有创建者且课程未公开时显示 */}

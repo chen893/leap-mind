@@ -88,6 +88,7 @@ export function LearningVerificationDialog({
 
   // 回显已有的答案和评估结果
   const updateQuestions = (chapterQuestions: Questions) => {
+    console.log("updateQuestions", chapterQuestions);
     chapterQuestions.forEach((question) => {
       if (question?.userAnswers && question?.userAnswers?.length > 0) {
         const userAnswer = question.userAnswers[0]; // 取最新的答案
@@ -191,6 +192,7 @@ export function LearningVerificationDialog({
       });
       setAssessmentResult(result);
       setShowAssessmentResult(true);
+      setCurrentQuestions(result.chapterQuestions);
       updateQuestions(result.chapterQuestions);
 
       // 显示评估完成提示

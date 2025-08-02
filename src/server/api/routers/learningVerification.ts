@@ -9,15 +9,6 @@ import {
   evaluateAnswersBatch,
 } from "@/lib/course-ai";
 import { type PointsReason } from "@prisma/client";
-import { evaluateAnswer } from "@/lib/course-ai";
-import {
-  type EvaluationResult,
-  type ChapterAssessmentResult,
-  type CompleteChapterRequest,
-  type CompleteChapterResponse,
-  type UserChapterProgressData,
-} from "@/types/learning-verification";
-import { type ChapterStatus } from "@prisma/client";
 
 // 积分更新结果类型
 interface PointsUpdateResult {

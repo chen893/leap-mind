@@ -332,7 +332,8 @@ export const learningVerificationRouter = createTRPCRouter({
         );
       }
 
-      // 先保存所有答案到数据库
+      // 先保存所有答案到数据库，并收集需要重新评估的问题
+      const questionsNeedingEvaluation = [];
       for (const question of questions) {
         const answer = input.answers[question.id];
         if (!answer) continue;
@@ -348,18 +349,23 @@ export const learningVerificationRouter = createTRPCRouter({
         });
 
         if (existingAnswer) {
-          // 更新现有答案
-          await ctx.db.userQuestionAnswer.update({
-            where: { id: existingAnswer.id },
-            data: {
-              answer: answer,
-              aiScore: null,
-              aiFeedback: null,
-              isCorrect: null,
-            },
-          });
+          // 检查答案是否相同
+          if (existingAnswer.answer !== answer) {
+            // 答案不同，需要重新评估
+            await ctx.db.userQuestionAnswer.update({
+              where: { id: existingAnswer.id },
+              data: {
+                answer: answer,
+                aiScore: null,
+                aiFeedback: null,
+                isCorrect: null,
+              },
+            });
+            questionsNeedingEvaluation.push(question);
+          }
+          // 如果答案相同，不需要重新评估，保持原有的评估结果
         } else {
-          // 创建新答案
+          // 创建新答案，需要评估
           await ctx.db.userQuestionAnswer.create({
             data: {
               userId: ctx.session.user.id,
@@ -367,6 +373,7 @@ export const learningVerificationRouter = createTRPCRouter({
               answer: answer,
             },
           });
+          questionsNeedingEvaluation.push(question);
         }
       }
 
@@ -374,8 +381,8 @@ export const learningVerificationRouter = createTRPCRouter({
       let totalScore = 0;
       let passedQuestions = 0;
 
-      // 准备批量评估数据
-      const questionsAndAnswers = questions
+      // 准备批量评估数据（只评估需要重新评估的问题）
+      const questionsAndAnswers = questionsNeedingEvaluation
         .filter((question) => input.answers[question.id])
         .map((question) => ({
           questionId: question.id,
@@ -385,56 +392,76 @@ export const learningVerificationRouter = createTRPCRouter({
           evaluationCriteria: "根据问题类型和内容进行综合评估",
         }));
 
-      try {
-        // 批量调用AI评估
-        const batchEvaluation = await evaluateAnswersBatch({
-          questionsAndAnswers,
-          level: "intermediate" as const,
-        });
-        console.log("batch evaluation", batchEvaluation);
-
-        // 处理评估结果
-        for (const evaluation of batchEvaluation.evaluations) {
-          const question = questions.find(
-            (q) => q.id === evaluation.questionId,
-          );
-          if (!question) continue;
-
-          const answerText = input.answers[question.id]!;
-
-          // 更新答案记录
-          const userAnswer = await ctx.db.userQuestionAnswer.findUnique({
-            where: {
-              userId_questionId: {
-                userId: ctx.session.user.id,
-                questionId: question.id,
-              },
-            },
+      // 如果有需要重新评估的问题，进行批量AI评估
+      if (questionsAndAnswers.length > 0) {
+        try {
+          // 批量调用AI评估
+          const batchEvaluation = await evaluateAnswersBatch({
+            questionsAndAnswers,
+            level: "intermediate" as const,
           });
+          console.log("batch evaluation", batchEvaluation);
 
-          if (userAnswer) {
-            await ctx.db.userQuestionAnswer.update({
-              where: { id: userAnswer.id },
-              data: {
-                aiScore: evaluation.score,
-                aiFeedback: evaluation.feedback,
-                isCorrect: evaluation.isCorrect,
-                aiSuggestions: evaluation.suggestions,
+          // 处理评估结果
+          for (const evaluation of batchEvaluation.evaluations) {
+            const question = questions.find(
+              (q) => q.id === evaluation.questionId,
+            );
+            if (!question) continue;
+
+            const answerText = input.answers[question.id]!;
+
+            // 更新答案记录
+            const userAnswer = await ctx.db.userQuestionAnswer.findUnique({
+              where: {
+                userId_questionId: {
+                  userId: ctx.session.user.id,
+                  questionId: question.id,
+                },
               },
             });
-          }
 
-          totalScore += evaluation.score;
-          if (evaluation.isCorrect) {
-            passedQuestions++;
+            if (userAnswer) {
+              await ctx.db.userQuestionAnswer.update({
+                where: { id: userAnswer.id },
+                data: {
+                  aiScore: evaluation.score,
+                  aiFeedback: evaluation.feedback,
+                  isCorrect: evaluation.isCorrect,
+                  aiSuggestions: evaluation.suggestions,
+                },
+              });
+            }
+          }
+        } catch (error) {
+          console.error("Failed to evaluate answers:", error);
+          // 如果AI批量评估失败，给予默认分数
+          for (const question of questionsNeedingEvaluation) {
+            const answerText = input.answers[question.id];
+            if (!answerText) continue;
           }
         }
-      } catch (error) {
-        console.error("Failed to evaluate answers:", error);
-        // 如果AI批量评估失败，给予默认分数
-        for (const question of questions) {
-          const answerText = input.answers[question.id];
-          if (!answerText) continue;
+      }
+
+      // 获取所有问题的最终评估结果（包括未重新评估的）
+      for (const question of questions) {
+        const answerText = input.answers[question.id];
+        if (!answerText) continue;
+
+        const userAnswer = await ctx.db.userQuestionAnswer.findUnique({
+          where: {
+            userId_questionId: {
+              userId: ctx.session.user.id,
+              questionId: question.id,
+            },
+          },
+        });
+
+        if (userAnswer && userAnswer.aiScore !== null) {
+          totalScore += userAnswer.aiScore;
+          if (userAnswer.isCorrect) {
+            passedQuestions++;
+          }
         }
       }
 

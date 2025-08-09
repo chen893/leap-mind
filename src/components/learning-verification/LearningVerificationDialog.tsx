@@ -75,7 +75,6 @@ export function LearningVerificationDialog({
   } = useLearningVerificationStore();
 
   const selectors = useLearningVerificationSelectors();
-  console.error("getOrGenerateQuestions", chapterId, chapterTitle);
   // API hooks
   const getOrGenerateQuestions =
     api.learningVerification.getOrGenerateQuestions.useQuery(

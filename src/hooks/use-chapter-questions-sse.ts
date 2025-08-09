@@ -102,10 +102,12 @@ function sseReducer(
 
 // 日志工具函数
 const isDev = process.env.NODE_ENV === "development";
+
+type logArgs = (string | number | object)[];
 const logger = {
-  log: (...args: any[]) => isDev && console.log("[SSE]", ...args),
-  warn: (...args: any[]) => isDev && console.warn("[SSE]", ...args),
-  error: (...args: any[]) => console.error("[SSE]", ...args),
+  log: (...args: logArgs) => isDev && console.log("[SSE]", ...args),
+  warn: (...args: logArgs) => isDev && console.warn("[SSE]", ...args),
+  error: (...args: logArgs) => console.error("[SSE]", ...args),
 };
 
 // 安全的JSON解析
@@ -139,7 +141,7 @@ export function useChapterQuestionsSSE(chapterId: string | null) {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // 事件处理函数
-  const handleConnected = (event: MessageEvent) => {
+  const handleConnected = (event: MessageEvent<string>) => {
     const data = safeJsonParse<SSEEventData>(event.data);
     if (data) {
       dispatch({ type: "CONNECTED" });
@@ -149,7 +151,7 @@ export function useChapterQuestionsSSE(chapterId: string | null) {
     }
   };
 
-  const handleReady = (event: MessageEvent) => {
+  const handleReady = (event: MessageEvent<string>) => {
     const data = safeJsonParse<SSEEventData>(event.data);
     if (data) {
       const questionCount = data.questionCount ?? 0;
@@ -172,7 +174,7 @@ export function useChapterQuestionsSSE(chapterId: string | null) {
     }
   };
 
-  const handleTimeout = (event: MessageEvent) => {
+  const handleTimeout = (event: MessageEvent<string>) => {
     const data = safeJsonParse<SSEEventData>(event.data);
     const errorMessage = data?.message ?? "题目生成超时，请稍后重试";
     dispatch({ type: "ERROR", payload: { error: errorMessage } });
@@ -180,7 +182,7 @@ export function useChapterQuestionsSSE(chapterId: string | null) {
     safeCloseEventSource(eventSourceRef.current);
   };
 
-  const handleServerError = (event: MessageEvent) => {
+  const handleServerError = (event: MessageEvent<string>) => {
     const data = safeJsonParse<SSEEventData>(event.data ?? "{}");
     const errorMessage = data?.message ?? "连接出现错误";
     dispatch({ type: "ERROR", payload: { error: errorMessage } });

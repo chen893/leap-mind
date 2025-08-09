@@ -3,21 +3,21 @@
  * 替代轮询机制，实现更高效的实时通知
  */
 
-type EventCallback = (data: any) => void;
+type EventCallback<T = unknown> = (data: T) => void;
 
 class EventEmitter {
   private events = new Map<string, Set<EventCallback>>();
 
   // 订阅事件
-  on(event: string, callback: EventCallback): () => void {
+  on<T = unknown>(event: string, callback: EventCallback<T>): () => void {
     if (!this.events.has(event)) {
       this.events.set(event, new Set());
     }
-    this.events.get(event)!.add(callback);
+    this.events.get(event)!.add(callback as EventCallback);
 
     // 返回取消订阅函数
     return () => {
-      this.events.get(event)?.delete(callback);
+      this.events.get(event)?.delete(callback as EventCallback);
       if (this.events.get(event)?.size === 0) {
         this.events.delete(event);
       }
@@ -25,7 +25,7 @@ class EventEmitter {
   }
 
   // 发射事件
-  emit(event: string, data?: any): void {
+  emit<T = unknown>(event: string, data?: T): void {
     const callbacks = this.events.get(event);
     if (callbacks) {
       callbacks.forEach((callback) => {
@@ -39,8 +39,8 @@ class EventEmitter {
   }
 
   // 一次性订阅
-  once(event: string, callback: EventCallback): () => void {
-    const unsubscribe = this.on(event, (data) => {
+  once<T = unknown>(event: string, callback: EventCallback<T>): () => void {
+    const unsubscribe = this.on(event, (data: T) => {
       unsubscribe();
       callback(data);
     });

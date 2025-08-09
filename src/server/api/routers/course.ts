@@ -311,7 +311,6 @@ export const courseRouter = createTRPCRouter({
   getChapterById: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .query(async ({ ctx, input }) => {
-      console.log("getChapterById", input.chapterId);
       const chapter = await ctx.db.chapter.findUnique({
         where: { id: input.chapterId },
       });

@@ -29,7 +29,6 @@ export const useLearningVerificationStore = create<LearningVerificationStore>()(
       ...initialState,
 
       setCurrentQuestions: (questions) => {
-        console.log("questions", questions);
         set({
           currentQuestions: questions,
           userAnswers: {},

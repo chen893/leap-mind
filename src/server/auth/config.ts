@@ -31,10 +31,6 @@ declare module "next-auth" {
  * @see https://next-auth.js.org/configuration/options
  */
 
-console.log("authConfig");
-console.log(process.env.AUTH_GITHUB_ID);
-console.log(process.env.AUTH_GITHUB_SECRET);
-
 export const authConfig = {
   providers: [
     GitHubProvider({

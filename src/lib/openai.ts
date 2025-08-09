@@ -35,7 +35,6 @@ const zhipu = createOpenAI({
 export const zhipuModel = zhipu(process.env.ZHIPU_MODEL ?? "gpt-4o");
 
 let defaultModel = openaiModel;
-
 switch (process.env.DEFAULT_MODEL) {
   case "google":
     defaultModel = googleModel;
@@ -44,7 +43,6 @@ switch (process.env.DEFAULT_MODEL) {
     defaultModel = openaiModel;
     break;
   case "zhipu":
-    console.log("zhipu");
     defaultModel = zhipuModel;
     break;
   default:
@@ -52,18 +50,19 @@ switch (process.env.DEFAULT_MODEL) {
 }
 
 export { defaultModel };
+const MAX_TOKENS = 16000;
 // 统一的生成参数配置
 export const DEFAULT_GENERATION_CONFIG = {
   temperature: 0.7,
-  maxTokens: 16000,
+  maxTokens: MAX_TOKENS,
 } as const;
 
 export const CHAT_GENERATION_CONFIG = {
   temperature: 0.7,
-  maxTokens: 16000,
+  maxTokens: MAX_TOKENS,
 } as const;
 
 export const TITLE_DESCRIPTION_CONFIG = {
   temperature: 0.7,
-  maxTokens: 16000,
+  maxTokens: MAX_TOKENS,
 } as const;

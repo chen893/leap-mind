@@ -75,7 +75,7 @@ export function LearningVerificationDialog({
   } = useLearningVerificationStore();
 
   const selectors = useLearningVerificationSelectors();
-
+  console.error("getOrGenerateQuestions", chapterId, chapterTitle);
   // API hooks
   const getOrGenerateQuestions =
     api.learningVerification.getOrGenerateQuestions.useQuery(
@@ -88,7 +88,6 @@ export function LearningVerificationDialog({
 
   // 回显已有的答案和评估结果
   const updateQuestions = (chapterQuestions: Questions) => {
-    console.log("updateQuestions", chapterQuestions);
     chapterQuestions.forEach((question) => {
       if (question?.userAnswers && question?.userAnswers?.length > 0) {
         const userAnswer = question.userAnswers[0]; // 取最新的答案
@@ -127,7 +126,6 @@ export function LearningVerificationDialog({
       try {
         // 获取或生成问题（后端会自动判断是否需要生成）
         const questionsResult = await getOrGenerateQuestions.refetch();
-        console.log("questionsResult", questionsResult);
         const chapterQuestions = questionsResult.data?.chapterQuestions ?? [];
 
         if (questionsResult.data && chapterQuestions.length > 0) {

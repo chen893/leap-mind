@@ -7,6 +7,8 @@ import {
   defaultModel,
   CHAT_GENERATION_CONFIG,
 } from "@/lib/openai";
+import { generateChapterQuestions } from "@/lib/course-ai";
+import { typedEventEmitter } from "@/lib/event-emitter";
 
 export async function POST(req: Request) {
   try {
@@ -161,7 +163,6 @@ ${practicalTaskInstruction}
 \
 
 `;
-
     const result = streamText({
       model: defaultModel,
       prompt: instructionalDesignPrompt,
@@ -176,6 +177,54 @@ ${practicalTaskInstruction}
               lastUpdated: new Date(),
             },
           });
+
+          // 章节内容生成完成后，异步生成学习验证问题（若尚未生成）
+          try {
+            const existing = await db.chapterQuestion.count({
+              where: { chapterId },
+            });
+            if (existing === 0) {
+              const aiQuestions = await generateChapterQuestions({
+                courseTitle,
+                chapterTitle,
+                chapterContent: event.text,
+                level: "intermediate",
+              });
+
+              await Promise.all(
+                aiQuestions.questions.map((q) =>
+                  db.chapterQuestion.create({
+                    data: {
+                      chapterId,
+                      questionNumber: q.questionNumber,
+                      questionText: q.questionText,
+                      questionType: q.questionType,
+                      questionCategory: q.questionCategory,
+                      difficulty: q.difficulty,
+                      hints: q.hints ?? [],
+                      options: q.options ?? undefined,
+                    },
+                  }),
+                ),
+              );
+
+              // 题目生成完成后，发射事件通知客户端
+              typedEventEmitter.emitChapterQuestionsReady({
+                chapterId,
+                questionCount: aiQuestions.questions.length,
+                timestamp: Date.now(),
+              });
+
+              console.log(
+                `[Event] Chapter questions ready for ${chapterId}, count: ${aiQuestions.questions.length}`,
+              );
+            }
+          } catch (genErr) {
+            console.error(
+              "Failed to pre-generate learning verification questions:",
+              genErr,
+            );
+          }
         } catch (error) {
           console.error("Failed to save chapter content:", error);
         }

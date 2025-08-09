@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { EnhancedButton } from "@/components/ui/enhanced-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +9,7 @@ import { AIChatPanel } from "@/components/ai-chat-panel";
 import { LearningVerificationDialog } from "@/components/learning-verification/LearningVerificationDialog";
 import { MessageCircle } from "lucide-react";
 import { api } from "@/trpc/react";
+import { useChapterQuestionsSSE } from "@/hooks/use-chapter-questions-sse";
 import type { CourseContentAreaProps } from "@/types/components";
 
 export function CourseContentArea({
@@ -45,6 +46,26 @@ export function CourseContentArea({
     chapterProgress?.status === "UNLOCKED" ||
     chapterProgress?.status === "COMPLETED" ||
     selectedChapterNumber === 1;
+
+  // 学习验证就绪状态（在题目生成完成前不显示）
+  const [lvReady, setLvReady] = useState(false);
+
+  const {
+    isReady: questionsReady,
+    error: questionsError,
+    questionCount,
+    source: questionsSource,
+  } = useChapterQuestionsSSE(selectedChapter?.id ?? null);
+
+  // 当题目就绪时更新状态
+  useEffect(() => {
+    if (questionsReady) {
+      setLvReady(true);
+    }
+    return () => {
+      setLvReady(false);
+    };
+  }, [questionsReady, selectedChapter?.id, questionCount, questionsSource]);
 
   if (isLoading) {
     return <div>Loading...</div>;
@@ -86,34 +107,37 @@ export function CourseContentArea({
             />
           </div>
 
-          {/* 学习验证区域 - 放在内容底部，作为明确的下一步行动 */}
-          <div className="border-t bg-gray-50 p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-semibold text-gray-900">学习验证</h3>
-                <p className="text-sm text-gray-600">
-                  完成学习验证以解锁下一章节并获得积分奖励
-                </p>
+          {/* 学习验证区域 - 在题目生成完成前不显示 */}
+          {lvReady && (
+            <>
+              <div className="border-t bg-gray-50 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">学习验证</h3>
+                    <p className="text-sm text-gray-600">
+                      完成学习验证以解锁下一章节并获得积分奖励
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setShowVerificationDialog(true)}
+                    disabled={!isUnlocked}
+                    size="lg"
+                  >
+                    开始验证
+                  </Button>
+                </div>
               </div>
-              <Button
-                onClick={() => setShowVerificationDialog(true)}
-                disabled={!isUnlocked}
-                size="lg"
-              >
-                开始验证
-              </Button>
-            </div>
-          </div>
-
-          {/* 学习验证弹窗 */}
-          <LearningVerificationDialog
-            open={showVerificationDialog}
-            onOpenChange={setShowVerificationDialog}
-            chapterId={chapter.id}
-            chapterTitle={chapter.title}
-            courseId={courseId}
-            onComplete={selectNextChapter}
-          />
+              {/* 学习验证弹窗 */}
+              <LearningVerificationDialog
+                open={showVerificationDialog}
+                onOpenChange={setShowVerificationDialog}
+                chapterId={chapter.id}
+                chapterTitle={chapter.title}
+                courseId={courseId}
+                onComplete={selectNextChapter}
+              />
+            </>
+          )}
         </div>
       </TabsContent>
 

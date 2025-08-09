@@ -77,8 +77,9 @@ export function CourseContentArea({
       <TabsContent value="content">
         <div className="rounded-lg bg-white shadow-md">
           <div className="p-6">
-            <h2 className="mb-4 text-2xl font-bold">{chapter.title}</h2>
+            {/* <h2 className="mb-4 text-2xl font-bold">{chapter.title}</h2> */}
             <ChapterContent
+              key={chapter.id}
               courseId={courseId}
               chapterNumber={selectedChapterNumber ?? 1}
               isUnlocked={isUnlocked}

@@ -116,7 +116,7 @@ export function LearningVerificationDialog({
   // 初始化问题
   useEffect(() => {
     const initializeQuestions = async () => {
-      if (!chapterId && !open) return;
+      if (!chapterId) return;
 
       // 切换章节时先清理之前的状态
       resetChapter();
@@ -154,7 +154,7 @@ export function LearningVerificationDialog({
 
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     initializeQuestions();
-  }, [chapterId, open]); // 只依赖 chapterId
+  }, [chapterId]); // 只依赖 chapterId
 
   // 评估所有答案
   const handleEvaluateAll = useCallback(async () => {

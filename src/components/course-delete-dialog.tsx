@@ -98,14 +98,18 @@ export function CourseDeleteDialog({
           </div>
           <AlertDialogDescription className="space-y-3 text-left">
             <p className="text-sm text-gray-600">
-              您即将删除课程 <span className="font-semibold">"{course.title}"</span>。
+              您即将删除课程
+              <span className="font-semibold">
+                &ldquo;{course.title}&rdquo;
+              </span>
+              。
             </p>
-            
+
             <div className="rounded-lg border border-red-200 bg-red-50 p-3">
-              <p className="text-sm text-red-800 font-medium mb-2">
+              <p className="mb-2 text-sm font-medium text-red-800">
                 此操作将永久删除：
               </p>
-              <ul className="text-sm text-red-700 space-y-1">
+              <ul className="space-y-1 text-sm text-red-700">
                 <li>• 课程及其所有内容</li>
                 <li>• 全部 {course.chapters.length} 个章节</li>
                 <li>• 所有学习进度和问答记录</li>
@@ -114,7 +118,8 @@ export function CourseDeleteDialog({
             </div>
 
             <p className="text-sm text-gray-600">
-              <strong>警告：</strong>此操作无法撤销。删除后，您和所有学习者的相关数据都将永久丢失。
+              <strong>警告：</strong>
+              此操作无法撤销。删除后，您和所有学习者的相关数据都将永久丢失。
             </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -136,10 +141,7 @@ export function CourseDeleteDialog({
         </div>
 
         <AlertDialogFooter className="gap-2">
-          <AlertDialogCancel 
-            disabled={isDeleting}
-            className="flex-1"
-          >
+          <AlertDialogCancel disabled={isDeleting} className="flex-1">
             取消
           </AlertDialogCancel>
           <Button

@@ -34,6 +34,7 @@ export interface CourseCardProps {
     creator: {
       name: string | null;
       image: string | null;
+      id: string | null;
     };
     chapters?: Pick<Chapter, "id" | "title">[];
     joinedByCount?: number;
@@ -51,4 +52,5 @@ export interface CourseCardProps {
     progressPercentage: number;
   };
   showProgress?: boolean;
+  onDeleteClick?: (course: { id: string; title: string; chapters: { id: string; title: string }[] }) => void;
 }

@@ -15,10 +15,19 @@ import { api } from "@/trpc/react";
 import { useSession } from "next-auth/react";
 import { BookOpen, Plus, TrendingUp, Clock, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useMemo, useState, useCallback } from "react";
+import { CourseDeleteDialog } from "@/components/course-delete-dialog";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+
+  // 删除弹窗控制与当前选择的课程
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [courseToDelete, setCourseToDelete] = useState<{
+    id: string;
+    title: string;
+    chapters: { id: string; title: string }[];
+  } | null>(null);
 
   // 学习中的课程查询
   const {
@@ -70,6 +79,44 @@ export default function DashboardPage() {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
     },
   );
+
+  // 供CourseCard触发删除弹窗
+  const handleOpenDelete = useCallback(
+    (course: {
+      id: string;
+      title: string;
+      chapters: { id: string; title: string }[];
+    }) => {
+      setCourseToDelete(course);
+      setDeleteDialogOpen(true);
+    },
+    [],
+  );
+
+  // 删除成功后本地移除列表项：重新过滤createdData的pages
+  const handleDeleted = useCallback(() => {
+    if (!courseToDelete) return;
+    // 直接在缓存中移除已删除课程，避免整页刷新
+    api
+      .useUtils()
+      .course.getUserCourses.setInfiniteData(
+        { limit: 10, createdByMe: true },
+        (oldData) => {
+          if (!oldData) return oldData;
+          return {
+            pageParams: oldData.pageParams,
+            pages: oldData.pages.map((page) => ({
+              ...page,
+              courses: page.courses.filter(
+                (p) => p.course.id !== courseToDelete.id,
+              ),
+            })),
+          };
+        },
+      );
+    setCourseToDelete(null);
+    setDeleteDialogOpen(false);
+  }, [courseToDelete]);
 
   // 合并各标签页的分页数据
   const inProgressCourses = useMemo(() => {
@@ -238,6 +285,7 @@ export default function DashboardPage() {
                         }}
                         showProgress={true}
                         stats={progress.stats}
+                        onDeleteClick={handleOpenDelete}
                       />
                     );
                   })}
@@ -314,6 +362,7 @@ export default function DashboardPage() {
                         }}
                         showProgress={true}
                         stats={progress.stats}
+                        onDeleteClick={handleOpenDelete}
                       />
                     );
                   })}
@@ -382,6 +431,7 @@ export default function DashboardPage() {
                         }}
                         showProgress={true}
                         stats={progress.stats}
+                        onDeleteClick={handleOpenDelete}
                       />
                     );
                   })}
@@ -424,6 +474,21 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* 全局删除弹窗 */}
+      {courseToDelete && (
+        <CourseDeleteDialog
+          open={deleteDialogOpen}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDeleteDialogOpen(false);
+              setCourseToDelete(null);
+            }
+          }}
+          course={courseToDelete}
+          onDeleted={handleDeleted}
+        />
+      )}
     </div>
   );
 }

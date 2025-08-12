@@ -72,9 +72,10 @@ export function CourseHeader({
           </TooltipProvider>
         </div>
 
-        {/* 发布按钮 - 只有创建者且课程未公开时显示 */}
-        {isCreator && !course.isPublic && (
-          <div className="ml-4">
+        {/* 右侧操作区 */}
+        <div className="ml-4 flex items-center gap-2">
+          {/* 发布按钮 - 只有创建者且课程未公开时显示 */}
+          {isCreator && !course.isPublic && (
             <Button
               onClick={handlePublish}
               disabled={publishMutation.isPending}
@@ -92,18 +93,16 @@ export function CourseHeader({
                 </>
               )}
             </Button>
-          </div>
-        )}
+          )}
 
-        {/* 已发布状态显示 */}
-        {course.isPublic && (
-          <div className="ml-4">
+          {/* 已发布状态显示 */}
+          {course.isPublic && (
             <div className="flex items-center rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-blue-700">
               <Share2 className="mr-2 h-4 w-4" />
               <span className="text-sm font-medium">已发布到广场</span>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {chapterProgresses && (

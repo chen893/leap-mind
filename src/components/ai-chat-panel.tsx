@@ -44,7 +44,7 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
     });
 
   return (
-    <Card className="h-[600px] flex flex-col">
+    <Card className="flex h-[600px] flex-col">
       <CardHeader>
         <CardTitle className="flex items-center space-x-2">
           <MessageCircle className="h-5 w-5" />
@@ -55,7 +55,7 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-0 max-h-[100vh-450px] overflow-auto">
+      <CardContent className="flex max-h-[100vh-450px] flex-1 flex-col overflow-auto p-0">
         <ScrollArea className="flex-1 p-4">
           <div className="space-y-4">
             {messages.map((message) => (
@@ -68,7 +68,7 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
                 }`}
               >
                 <div
-                  className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                  className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full ${
                     message.role === "user"
                       ? "bg-blue-500 text-white"
                       : "bg-gray-200 text-gray-600"
@@ -82,12 +82,12 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
                 </div>
 
                 <div
-                  className={`flex-1 max-w-xs lg:max-w-md ${
+                  className={`max-w-xs flex-1 lg:max-w-md ${
                     message.role === "user" ? "text-right" : ""
                   }`}
                 >
                   <div
-                    className={`inline-block p-3 rounded-lg ${
+                    className={`inline-block rounded-lg p-3 ${
                       message.role === "user"
                         ? "bg-blue-500 text-white"
                         : "bg-gray-100 text-gray-900"
@@ -103,19 +103,19 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
 
             {isLoading && (
               <div className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-gray-600">
                   <Bot className="h-4 w-4" />
                 </div>
                 <div className="flex-1">
-                  <div className="inline-block p-3 rounded-lg bg-gray-100">
+                  <div className="inline-block rounded-lg bg-gray-100 p-3">
                     <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                      <div className="h-2 w-2 animate-bounce rounded-full bg-gray-400"></div>
                       <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                         style={{ animationDelay: "0.1s" }}
                       ></div>
                       <div
-                        className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                        className="h-2 w-2 animate-bounce rounded-full bg-gray-400"
                         style={{ animationDelay: "0.2s" }}
                       ></div>
                     </div>

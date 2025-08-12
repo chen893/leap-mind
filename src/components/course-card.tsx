@@ -10,17 +10,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { BookOpen, Users } from "lucide-react";
-// import { useSession } from "next-auth/react";
+import { BookOpen, Users, MoreVertical, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { type CourseCardProps } from "@/types/course";
+
 export function CourseCard({
   course,
   progress,
   stats,
   showProgress = false,
+  onDeleteClick,
 }: CourseCardProps) {
-  // const { data: session } = useSession();
+  const { data: session } = useSession();
+
+  // 判断当前用户是否为课程创建者
+  const isCreator = session?.user?.id === course.creator.id;
 
   const progressPercentage =
     stats?.progressPercentage ??
@@ -49,6 +60,31 @@ export function CourseCard({
               {course.description}
             </CardDescription>
           </div>
+          
+          {/* 课程操作菜单 - 仅创建者可见 */}
+          {isCreator && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (onDeleteClick) {
+                      const chapters = (course.chapters ?? []).map((c) => ({ id: c.id, title: c.title }));
+                      onDeleteClick({ id: course.id, title: course.title, chapters });
+                    }
+                  }}
+                  className="text-red-600 focus:text-red-600"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  删除课程
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
 
         {/* 优化的元信息 */}

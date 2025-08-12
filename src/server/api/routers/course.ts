@@ -321,4 +321,64 @@ export const courseRouter = createTRPCRouter({
 
       return chapter;
     }),
+
+  // 删除课程
+  deleteCourse: protectedProcedure
+    .input(z.object({ courseId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      // 验证课程存在且用户有权限删除
+      const course = await ctx.db.course.findUnique({
+        where: {
+          id: input.courseId,
+          creatorId: ctx.session.user.id, // 确保只有创建者可以删除
+        },
+        include: {
+          _count: {
+            select: {
+              userProgresses: true,
+              chapters: true,
+            },
+          },
+        },
+      });
+
+      if (!course) {
+        throw new Error("Course not found or unauthorized");
+      }
+
+      // 注意：由于 UserChapterProgress.chapter 的外键 onDelete 可能为 NoAction，
+      // 直接删除 Course 会因 Chapter 的删除触发外键约束而失败。
+      // 所以我们需要在事务中手动删除依赖数据，然后再删除课程。
+      const result = await ctx.db.$transaction(async (tx) => {
+        // 1) 删除所有用户章节进度（避免 Chapter 删除时触发外键约束）
+        const deletedChapterProgresses = await tx.userChapterProgress.deleteMany({
+          where: { courseId: input.courseId },
+        });
+
+        // 2) 删除用户课程进度（可选，若 schema 设为级联亦可省略，但手动删除更稳妥）
+        const deletedCourseProgresses = await tx.userCourseProgress.deleteMany({
+          where: { courseId: input.courseId },
+        });
+
+        // 3) 删除课程（Prisma/DB 将自动级联删除 Chapters 以及其下的问题与回答）
+        await tx.course.delete({ where: { id: input.courseId } });
+
+        return {
+          deletedChapterProgresses: deletedChapterProgresses.count,
+          deletedCourseProgresses: deletedCourseProgresses.count,
+        };
+      });
+
+      return {
+        success: true,
+        message: "课程已成功删除",
+        deletedData: {
+          course: course.title,
+          chapters: course._count.chapters,
+          userProgresses: course._count.userProgresses,
+          deletedChapterProgresses: result.deletedChapterProgresses,
+          deletedCourseProgresses: result.deletedCourseProgresses,
+        },
+      };
+    }),
 });

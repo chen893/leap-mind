@@ -149,7 +149,7 @@ model UserChapterProgress {
 
     // Relations
     user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-    chapter    Chapter            @relation(fields: [chapterId], references: [id], onDelete: NoAction)
+    chapter    Chapter            @relation(fields: [chapterId], references: [id], onDelete: Cascade)
     enrollment UserCourseProgress @relation(fields: [userId, courseId], references: [userId, courseId], onDelete: Cascade)
 
     @@unique([userId, chapterId])

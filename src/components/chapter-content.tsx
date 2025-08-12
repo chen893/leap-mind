@@ -34,6 +34,8 @@ export function ChapterContent({
     { enabled: !!course && isUnlocked },
   );
 
+  console.log("chapter", chapter);
+
   const {
     completion,
     complete,
@@ -146,7 +148,7 @@ export function ChapterContent({
         </div>
       </CardHeader>
 
-      <CardContent className="max-h-[40vh] overflow-auto">
+      <CardContent className="max-h-[calc(100vh-600px)] overflow-auto">
         {contentMd ? (
           <Markdown key={courseId + "-" + count.current} content={contentMd} />
         ) : (

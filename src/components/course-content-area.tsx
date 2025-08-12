@@ -82,17 +82,6 @@ export function CourseContentArea({
           <TabsTrigger value="content">学习内容</TabsTrigger>
           <TabsTrigger value="chat">AI助手</TabsTrigger>
         </TabsList>
-
-        <EnhancedButton
-          variant="outline"
-          size="sm"
-          onClick={() => setShowChat(!showChat)}
-          className="lg:hidden"
-          buttonId="toggle-chat"
-        >
-          <MessageCircle className="mr-2 h-4 w-4" />
-          AI助手
-        </EnhancedButton>
       </div>
 
       <TabsContent value="content">

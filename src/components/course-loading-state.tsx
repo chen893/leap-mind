@@ -8,7 +8,7 @@ export function CourseLoadingState() {
       <Navbar />
 
       {/* 顶栏骨架 */}
-      <div className="sticky top-0 z-40 backdrop-blur-md bg-white/70 border-b border-amber-100/50">
+      <div className="sticky top-16 z-40 backdrop-blur-md bg-white/70 border-b border-amber-100/50">
         <div className="container mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-14 gap-4">
             <div className="h-4 w-48 bg-amber-100 rounded animate-pulse" />

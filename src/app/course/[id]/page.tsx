@@ -97,7 +97,7 @@ export default function CoursePage() {
 
       {/* 紧凑顶栏 - 课程信息 + 进度 */}
       <div
-        className={`sticky top-0 z-40 backdrop-blur-md bg-white/70 border-b border-amber-100/50 transition-all duration-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
+        className={`sticky top-16 z-40 backdrop-blur-md bg-white/70 border-b border-amber-100/50 transition-all duration-500 ${mounted ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"}`}
       >
         <div className="container mx-auto px-4 lg:px-6">
           <div className="flex items-center justify-between h-14 gap-4">

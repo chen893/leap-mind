@@ -1,10 +1,14 @@
 export async function register() {
   // 只在服务端运行时配置代理
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const proxyUrl =
-      process.env.HTTPS_PROXY ||
-      process.env.HTTP_PROXY ||
-      process.env.ALL_PROXY;
+    const firstNonEmpty = (...values: Array<string | undefined>) =>
+      values.map((value) => value?.trim()).find((value) => value);
+
+    const proxyUrl = firstNonEmpty(
+      process.env.HTTPS_PROXY,
+      process.env.HTTP_PROXY,
+      process.env.ALL_PROXY,
+    );
 
     if (proxyUrl) {
       console.log(`[Proxy] 正在配置代理: ${proxyUrl}`);

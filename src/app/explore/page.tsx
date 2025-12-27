@@ -2,6 +2,7 @@
 
 import { CourseCard } from "@/components/course-card";
 import { Navbar } from "@/components/navbar";
+import { PageShellClient } from "@/components/page-shell-client";
 import { EnhancedButton } from "@/components/ui/enhanced-button";
 import {
   Card,
@@ -24,6 +25,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
+import Link from "next/link";
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -35,7 +37,6 @@ export default function ExplorePage() {
     fetchNextPage,
     hasNextPage,
     isLoading,
-    isError,
   } = api.course.getPublicCourses.useInfiniteQuery(
     { limit: 12 },
     {
@@ -65,16 +66,16 @@ export default function ExplorePage() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <PageShellClient>
       <Navbar />
 
       {/* 重新设计的Hero区域 */}
       <div className="relative overflow-hidden">
         {/* 背景装饰 */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/95 via-purple-600/95 to-indigo-600/95" />
+        <div className="absolute inset-0 bg-gradient-to-r from-brand/95 via-brand/90 to-brand-accent/90" />
         <div className="absolute inset-0">
           <div className="absolute top-0 left-1/4 h-72 w-72 animate-pulse rounded-full bg-white/10 blur-3xl" />
-          <div className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-purple-300/20 blur-3xl delay-1000" />
+          <div className="absolute right-1/4 bottom-0 h-96 w-96 animate-pulse rounded-full bg-brand-accent/20 blur-3xl delay-1000" />
         </div>
 
         <div className="relative container mx-auto px-4 py-20 text-center">
@@ -90,13 +91,13 @@ export default function ExplorePage() {
 
               <h1 className="text-5xl leading-tight font-bold text-white md:text-7xl">
                 内容广场
-                <span className="mt-3 block bg-gradient-to-r from-blue-200 to-purple-200 bg-clip-text text-3xl font-medium text-transparent md:text-5xl">
+                <span className="mt-3 block bg-gradient-to-r from-white to-brand-accent bg-clip-text text-3xl font-medium text-transparent md:text-5xl">
                   探索无限可能
                 </span>
               </h1>
             </div>
 
-            <p className="mb-12 text-xl leading-relaxed text-blue-100/90 md:text-2xl">
+            <p className="mb-12 text-xl leading-relaxed text-white/85 md:text-2xl">
               发现由AI生成的优质学习内容，开启你的智能学习之旅
             </p>
 
@@ -135,21 +136,21 @@ export default function ExplorePage() {
       <div className="container mx-auto px-4 py-16">
         {/* 重新设计的统计卡片 */}
         <div className="mb-16 grid gap-8 md:grid-cols-3">
-          <Card className="group relative overflow-hidden border-0 bg-gradient-to-br from-blue-50 to-blue-100/50 shadow-lg transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
+          <Card className="group relative overflow-hidden border-border/60 bg-card/70 shadow-lg backdrop-blur transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl">
+            <div className="absolute inset-0 bg-gradient-to-br from-brand/10 to-brand-accent/10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"></div>
             <CardHeader className="relative flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold tracking-wide text-blue-800">
+              <CardTitle className="text-sm font-semibold tracking-wide text-muted-foreground">
                 总课程数
               </CardTitle>
-              <div className="rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 p-3 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
-                <BookOpen className="h-5 w-5 text-white" />
+              <div className="rounded-xl bg-gradient-to-br from-brand to-brand-accent p-3 shadow-lg transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3">
+                <BookOpen className="h-5 w-5 text-brand-foreground" />
               </div>
             </CardHeader>
             <CardContent className="relative">
-              <div className="text-4xl font-bold tracking-tight text-blue-900">
+              <div className="text-4xl font-bold tracking-tight text-foreground">
                 {courses.length}
               </div>
-              <p className="mt-2 text-sm font-medium text-blue-600/80">
+              <p className="mt-2 text-sm font-medium text-muted-foreground">
                 AI生成的优质内容
               </p>
             </CardContent>
@@ -161,8 +162,8 @@ export default function ExplorePage() {
         {/* Filter and View Controls */}
         <div className="mb-8 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex items-center gap-4">
-            <h2 className="text-2xl font-bold text-gray-900">探索课程</h2>
-            <span className="rounded-full bg-blue-100 px-3 py-1 text-sm font-medium text-blue-800">
+            <h2 className="text-2xl font-bold text-foreground">探索课程</h2>
+            <span className="rounded-full bg-brand/10 px-3 py-1 text-sm font-medium text-brand">
               {filteredCourses.length} 门课程
             </span>
           </div>
@@ -173,13 +174,13 @@ export default function ExplorePage() {
               筛选
             </EnhancedButton>
 
-            <div className="flex items-center rounded-lg bg-gray-100 p-1">
+            <div className="flex items-center rounded-lg bg-muted p-1">
               <button
                 onClick={() => setViewMode("grid")}
                 className={`rounded-md p-2 transition-colors ${
                   viewMode === "grid"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-background text-brand shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <Grid className="h-4 w-4" />
@@ -188,8 +189,8 @@ export default function ExplorePage() {
                 onClick={() => setViewMode("list")}
                 className={`rounded-md p-2 transition-colors ${
                   viewMode === "list"
-                    ? "bg-white text-blue-600 shadow-sm"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? "bg-background text-brand shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <List className="h-4 w-4" />
@@ -209,13 +210,13 @@ export default function ExplorePage() {
           >
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className="animate-pulse">
-                <div className="rounded-2xl bg-white p-6 shadow-lg">
-                  <div className="mb-3 h-4 w-3/4 rounded-lg bg-gray-200"></div>
-                  <div className="mb-4 h-3 w-full rounded bg-gray-200"></div>
-                  <div className="mb-4 h-3 w-2/3 rounded bg-gray-200"></div>
+                <div className="rounded-2xl border border-border/60 bg-card/70 p-6 shadow-lg backdrop-blur">
+                  <div className="mb-3 h-4 w-3/4 rounded-lg bg-muted"></div>
+                  <div className="mb-4 h-3 w-full rounded bg-muted"></div>
+                  <div className="mb-4 h-3 w-2/3 rounded bg-muted"></div>
                   <div className="flex items-center justify-between">
-                    <div className="h-6 w-6 rounded-full bg-gray-200"></div>
-                    <div className="h-8 w-20 rounded-lg bg-gray-200"></div>
+                    <div className="h-6 w-6 rounded-full bg-muted"></div>
+                    <div className="h-8 w-20 rounded-lg bg-muted"></div>
                   </div>
                 </div>
               </div>
@@ -246,7 +247,7 @@ export default function ExplorePage() {
                   buttonId="load-more-courses"
                   onAsyncClick={handleLoadMore}
                   size="lg"
-                  className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 px-8 py-3 text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+                  className="rounded-xl bg-gradient-to-r from-brand to-brand-accent px-8 py-3 text-brand-foreground shadow-lg transition-all duration-300 hover:from-brand/90 hover:to-brand-accent/90 hover:shadow-xl"
                   loadingText="加载中..."
                 >
                   加载更多课程
@@ -256,25 +257,28 @@ export default function ExplorePage() {
           </>
         ) : (
           <div className="py-20 text-center">
-            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-gray-100 to-gray-200">
-              <BookOpen className="h-12 w-12 text-gray-400" />
+            <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-muted">
+              <BookOpen className="h-12 w-12 text-muted-foreground" />
             </div>
-            <h3 className="mb-3 text-xl font-semibold text-gray-900">
+            <h3 className="mb-3 text-xl font-semibold text-foreground">
               {searchQuery ? "未找到相关课程" : "暂无课程"}
             </h3>
-            <p className="mx-auto mb-6 max-w-md text-gray-600">
+            <p className="mx-auto mb-6 max-w-md text-muted-foreground">
               {searchQuery
                 ? "尝试使用其他关键词搜索，或者浏览推荐内容"
                 : "成为第一个创建课程的用户，分享你的知识！"}
             </p>
             {!searchQuery && (
-              <EnhancedButton className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                创建第一门课程
+              <EnhancedButton
+                asChild
+                className="bg-gradient-to-r from-brand to-brand-accent text-brand-foreground hover:from-brand/90 hover:to-brand-accent/90"
+              >
+                <Link href="/create">创建第一门课程</Link>
               </EnhancedButton>
             )}
           </div>
         )}
       </div>
-    </div>
+    </PageShellClient>
   );
 }

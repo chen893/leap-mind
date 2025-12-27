@@ -51,14 +51,14 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
             <div
               className={`flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg ${
                 message.role === "user"
-                  ? "bg-blue-500"
-                  : "bg-gradient-to-br from-amber-500 to-orange-500"
+                  ? "bg-brand"
+                  : "bg-gradient-to-br from-brand to-brand-accent"
               }`}
             >
               {message.role === "user" ? (
-                <User className="h-3.5 w-3.5 text-white" />
+                <User className="h-3.5 w-3.5 text-brand-foreground" />
               ) : (
-                <Bot className="h-3.5 w-3.5 text-white" />
+                <Bot className="h-3.5 w-3.5 text-brand-foreground" />
               )}
             </div>
 
@@ -67,12 +67,12 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
               <div
                 className={`inline-block rounded-xl px-3 py-2 text-sm ${
                   message.role === "user"
-                    ? "bg-blue-500 text-white rounded-tr-sm"
-                    : "bg-white ring-1 ring-amber-100 rounded-tl-sm"
+                    ? "bg-brand text-brand-foreground rounded-tr-sm"
+                    : "bg-background ring-1 ring-border/60 rounded-tl-sm"
                 }`}
               >
                 {message.role === "assistant" ? (
-                  <div className="prose prose-sm prose-amber max-w-none">
+                  <div className="prose prose-sm max-w-none">
                     <StreamdownMarkdown content={message.content} />
                   </div>
                 ) : (
@@ -86,16 +86,16 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
         {/* 加载状态 */}
         {isLoading && (
           <div className="flex items-start gap-2.5">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-amber-500 to-orange-500">
-              <Bot className="h-3.5 w-3.5 text-white" />
+            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-brand to-brand-accent">
+              <Bot className="h-3.5 w-3.5 text-brand-foreground" />
             </div>
-            <div className="inline-flex items-center gap-1.5 rounded-xl rounded-tl-sm bg-white px-3 py-2 ring-1 ring-amber-100">
-              <Sparkles className="h-3.5 w-3.5 text-amber-500 animate-pulse" />
-              <span className="text-sm text-amber-700">思考中</span>
+            <div className="inline-flex items-center gap-1.5 rounded-xl rounded-tl-sm bg-background px-3 py-2 ring-1 ring-border/60">
+              <Sparkles className="h-3.5 w-3.5 text-brand-accent animate-pulse" />
+              <span className="text-sm text-muted-foreground">思考中</span>
               <div className="flex gap-0.5 ml-1">
-                <div className="h-1 w-1 rounded-full bg-amber-400 animate-bounce" />
-                <div className="h-1 w-1 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "0.1s" }} />
-                <div className="h-1 w-1 rounded-full bg-amber-400 animate-bounce" style={{ animationDelay: "0.2s" }} />
+                <div className="h-1 w-1 rounded-full bg-brand-accent animate-bounce" />
+                <div className="h-1 w-1 rounded-full bg-brand-accent animate-bounce" style={{ animationDelay: "0.1s" }} />
+                <div className="h-1 w-1 rounded-full bg-brand-accent animate-bounce" style={{ animationDelay: "0.2s" }} />
               </div>
             </div>
           </div>
@@ -105,20 +105,20 @@ export function AIChatPanel({ courseId, chapterNumber }: AIChatPanelProps) {
       </div>
 
       {/* 输入区 - 固定在底部 */}
-      <div className="sticky bottom-0 border-t border-amber-100 bg-white/90 backdrop-blur-sm p-3">
+      <div className="sticky bottom-0 border-t border-border/60 bg-background/80 backdrop-blur-sm p-3">
         <form onSubmit={handleSubmit} className="flex gap-2">
           <Input
             value={input}
             onChange={handleInputChange}
             placeholder="输入问题..."
             disabled={isLoading}
-            className="flex-1 h-9 text-sm rounded-lg border-amber-200 focus:border-amber-400 focus:ring-amber-200"
+            className="h-9 flex-1 rounded-lg border-border bg-background/70 text-sm shadow-sm backdrop-blur focus:border-brand focus:ring-brand/20"
           />
           <Button
             type="submit"
             disabled={isLoading || !input.trim()}
             size="sm"
-            className="h-9 w-9 p-0 bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 rounded-lg"
+            className="h-9 w-9 rounded-lg bg-gradient-to-br from-brand to-brand-accent p-0 text-brand-foreground hover:from-brand/90 hover:to-brand-accent/90"
           >
             <Send className="h-4 w-4" />
           </Button>

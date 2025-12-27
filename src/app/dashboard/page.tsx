@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/navbar";
+import { PageShellClient } from "@/components/page-shell-client";
 import { CourseCard } from "@/components/course-card";
 import { Button } from "@/components/ui/button";
 import {
@@ -109,17 +110,6 @@ export default function DashboardPage() {
   const handleDeleted = useCallback(() => {
     if (!courseToDelete) return;
 
-    const removeFromPages = (oldData: any) => {
-      if (!oldData) return oldData;
-      return {
-        pageParams: oldData.pageParams,
-        pages: oldData.pages.map((page: any) => ({
-          ...page,
-          courses: page.courses.filter((p: any) => p.course.id !== courseToDelete.id),
-        })),
-      };
-    };
-
     // 使 getUserCourses 缓存失效，重新获取
     void utils.course.getUserCourses.invalidate();
 
@@ -157,37 +147,35 @@ export default function DashboardPage() {
 
   if (!session) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <PageShellClient>
         <Navbar />
         <div className="container mx-auto px-4 py-8 text-center">
-          <h1 className="mb-4 text-2xl font-bold text-gray-900">请先登录</h1>
-          <p className="text-gray-600">登录后即可查看你的学习进度</p>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">请先登录</h1>
+          <p className="text-muted-foreground">登录后即可查看你的学习进度</p>
         </div>
-      </div>
+      </PageShellClient>
     );
   }
 
-  const isLoading = inProgressLoading || completedLoading || createdLoading;
-
   return (
-    <div className="min-h-screen bg-gray-50">
+    <PageShellClient>
       <Navbar />
 
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold text-gray-900">
+            <h1 className="mb-2 text-3xl font-bold text-foreground">
               欢迎回来，{session.user.name}！
             </h1>
-            <p className="text-gray-600">继续你的学习之旅</p>
+            <p className="text-muted-foreground">继续你的学习之旅</p>
           </div>
-          <Link href="/create">
-            <Button className="flex items-center space-x-2">
+          <Button asChild className="flex items-center space-x-2">
+            <Link href="/create">
               <Plus className="h-4 w-4" />
               <span>创建新课程</span>
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
 
         {/* Stats */}
@@ -267,10 +255,10 @@ export default function DashboardPage() {
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="rounded-lg bg-white p-6">
-                      <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
-                      <div className="mb-4 h-3 w-full rounded bg-gray-200"></div>
-                      <div className="h-3 w-2/3 rounded bg-gray-200"></div>
+                    <div className="rounded-lg border border-border/60 bg-card/70 p-6 backdrop-blur">
+                      <div className="mb-2 h-4 w-3/4 rounded bg-muted"></div>
+                      <div className="mb-4 h-3 w-full rounded bg-muted"></div>
+                      <div className="h-3 w-2/3 rounded bg-muted"></div>
                     </div>
                   </div>
                 ))}
@@ -322,18 +310,18 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="py-12 text-center">
-                <BookOpen className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="mb-2 text-lg font-medium text-gray-900">
+                <BookOpen className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-medium text-foreground">
                   还没有学习中的课程
                 </h3>
-                <p className="mb-4 text-gray-600">创建或探索课程开始学习吧！</p>
+                <p className="mb-4 text-muted-foreground">创建或探索课程开始学习吧！</p>
                 <div className="flex justify-center space-x-4">
-                  <Link href="/create">
-                    <Button>创建课程</Button>
-                  </Link>
-                  <Link href="/explore">
-                    <Button variant="outline">探索课程</Button>
-                  </Link>
+                  <Button asChild>
+                    <Link href="/create">创建课程</Link>
+                  </Button>
+                  <Button asChild variant="outline">
+                    <Link href="/explore">探索课程</Link>
+                  </Button>
                 </div>
               </div>
             )}
@@ -344,10 +332,10 @@ export default function DashboardPage() {
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="rounded-lg bg-white p-6">
-                      <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
-                      <div className="mb-4 h-3 w-full rounded bg-gray-200"></div>
-                      <div className="h-3 w-2/3 rounded bg-gray-200"></div>
+                    <div className="rounded-lg border border-border/60 bg-card/70 p-6 backdrop-blur">
+                      <div className="mb-2 h-4 w-3/4 rounded bg-muted"></div>
+                      <div className="mb-4 h-3 w-full rounded bg-muted"></div>
+                      <div className="h-3 w-2/3 rounded bg-muted"></div>
                     </div>
                   </div>
                 ))}
@@ -399,11 +387,11 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="py-12 text-center">
-                <TrendingUp className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="mb-2 text-lg font-medium text-gray-900">
+                <TrendingUp className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-medium text-foreground">
                   还没有完成的课程
                 </h3>
-                <p className="text-gray-600">完成学习中的课程后会显示在这里</p>
+                <p className="text-muted-foreground">完成学习中的课程后会显示在这里</p>
               </div>
             )}
           </TabsContent>
@@ -413,10 +401,10 @@ export default function DashboardPage() {
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <div key={i} className="animate-pulse">
-                    <div className="rounded-lg bg-white p-6">
-                      <div className="mb-2 h-4 w-3/4 rounded bg-gray-200"></div>
-                      <div className="mb-4 h-3 w-full rounded bg-gray-200"></div>
-                      <div className="h-3 w-2/3 rounded bg-gray-200"></div>
+                    <div className="rounded-lg border border-border/60 bg-card/70 p-6 backdrop-blur">
+                      <div className="mb-2 h-4 w-3/4 rounded bg-muted"></div>
+                      <div className="mb-4 h-3 w-full rounded bg-muted"></div>
+                      <div className="h-3 w-2/3 rounded bg-muted"></div>
                     </div>
                   </div>
                 ))}
@@ -468,16 +456,16 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="py-12 text-center">
-                <Plus className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-                <h3 className="mb-2 text-lg font-medium text-gray-900">
+                <Plus className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h3 className="mb-2 text-lg font-medium text-foreground">
                   还没有创建课程
                 </h3>
-                <p className="mb-4 text-gray-600">
+                <p className="mb-4 text-muted-foreground">
                   创建你的第一个AI生成课程吧！
                 </p>
-                <Link href="/create">
-                  <Button>创建课程</Button>
-                </Link>
+                <Button asChild>
+                  <Link href="/create">创建课程</Link>
+                </Button>
               </div>
             )}
           </TabsContent>
@@ -498,6 +486,6 @@ export default function DashboardPage() {
           onDeleted={handleDeleted}
         />
       )}
-    </div>
+    </PageShellClient>
   );
 }

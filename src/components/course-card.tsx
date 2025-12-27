@@ -133,14 +133,15 @@ export function CourseCard({
             </span>
           </div>
 
-          <Link href={`/course/${course.id}`}>
-            <Button
-              size="sm"
-              className="shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
-            >
+          <Button
+            asChild
+            size="sm"
+            className="shadow-md transition-all duration-300 hover:shadow-lg active:scale-95"
+          >
+            <Link href={`/course/${course.id}`}>
               {showProgress ? "继续学习" : "开始学习"}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>

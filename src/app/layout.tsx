@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     // yles/globals.css
     <html lang="zh-CN">
-      <body>
+      <body className="min-h-dvh bg-background font-sans text-foreground antialiased">
         <SessionProvider>
           <TRPCReactProvider>
             {children}

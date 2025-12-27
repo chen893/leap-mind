@@ -1,6 +1,7 @@
 "use client";
 
 import { Navbar } from "@/components/navbar";
+import { PageShellClient } from "@/components/page-shell-client";
 import { EnhancedButton } from "@/components/ui/enhanced-button";
 import {
   Card,
@@ -31,7 +32,6 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { generateTitleAndDescription as generateTitleAndDescriptionAPI } from "@/lib/course-ai";
 
 export default function CreateCoursePage() {
   const [userInput, setUserInput] = useState("");
@@ -139,55 +139,61 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50">
+    <PageShellClient>
       <Navbar />
 
       <div className="container mx-auto px-4 py-16">
         <div className="mx-auto max-w-4xl">
           {/* 特性展示卡片 */}
           <div className="mb-12 grid gap-6 md:grid-cols-3">
-            <div className="group rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+            <div className="group rounded-2xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-brand-foreground shadow-sm">
                 <Zap className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-bold text-gray-900">智能生成</h3>
-              <p className="text-sm leading-relaxed text-gray-600">
+              <h3 className="mb-2 text-lg font-bold text-foreground">
+                智能生成
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 AI自动分析你的需求，生成结构化的课程大纲和详细内容
               </p>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-green-500 to-green-600 text-white">
+            <div className="group rounded-2xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-brand-foreground shadow-sm">
                 <Target className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-bold text-gray-900">个性定制</h3>
-              <p className="text-sm leading-relaxed text-gray-600">
+              <h3 className="mb-2 text-lg font-bold text-foreground">
+                个性定制
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 根据难度级别和学习目标，为你量身定制最适合的学习路径
               </p>
             </div>
 
-            <div className="group rounded-2xl bg-white p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 text-white">
+            <div className="group rounded-2xl border border-border/60 bg-card/70 p-6 shadow-sm backdrop-blur transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-brand to-brand-accent text-brand-foreground shadow-sm">
                 <Lightbulb className="h-6 w-6" />
               </div>
-              <h3 className="mb-2 text-lg font-bold text-gray-900">即时创建</h3>
-              <p className="text-sm leading-relaxed text-gray-600">
+              <h3 className="mb-2 text-lg font-bold text-foreground">
+                即时创建
+              </h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">
                 几分钟内完成课程创建，立即开始你的学习或教学之旅
               </p>
             </div>
           </div>
 
           {/* 主要表单卡片 */}
-          <Card className="relative overflow-hidden border-0 bg-white shadow-2xl">
+          <Card className="relative overflow-hidden border-border/60 bg-card/70 shadow-xl backdrop-blur">
             {/* 顶部装饰条 */}
-            <div className="h-1 w-full bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-500"></div>
+            <div className="h-1 w-full bg-gradient-to-r from-brand to-brand-accent"></div>
 
-            <CardHeader className="bg-gradient-to-r from-gray-50 to-blue-50/30 pb-8">
+            <CardHeader className="bg-gradient-to-r from-background/40 to-brand/5 pb-8">
               <div className="text-center">
-                <CardTitle className="mb-3 text-2xl font-bold text-gray-900">
+                <CardTitle className="mb-3 text-2xl font-bold text-foreground">
                   创建你的专属课程
                 </CardTitle>
-                <CardDescription className="text-lg leading-relaxed text-gray-600">
+                <CardDescription className="text-lg leading-relaxed text-muted-foreground">
                   只需描述你想学习的内容，AI将为你生成完整的课程
                 </CardDescription>
               </div>
@@ -199,9 +205,9 @@ export default function CreateCoursePage() {
                 <div className="group space-y-3">
                   <label
                     htmlFor="userInput"
-                    className="flex items-center gap-2 text-sm font-semibold text-gray-900"
+                    className="flex items-center gap-2 text-sm font-semibold text-foreground"
                   >
-                    <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                    <div className="h-2 w-2 rounded-full bg-brand"></div>
                     告诉我你想学什么
                   </label>
                   <div className="relative">
@@ -212,11 +218,11 @@ export default function CreateCoursePage() {
                       onChange={(e) => setUserInput(e.target.value)}
                       disabled={isGenerating || isCreating}
                       rows={4}
-                      className="resize-none rounded-xl border-2 border-gray-200 bg-white p-4 text-base transition-all duration-300 group-hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20"
+                      className="resize-none rounded-xl border-2 border-border bg-background/70 p-4 text-base shadow-sm backdrop-blur transition-all duration-300 group-hover:border-border/80 focus:border-brand focus:ring-4 focus:ring-brand/20"
                     />
                   </div>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-muted-foreground">
                       💡 描述越具体，AI生成的课程越符合你的需求
                     </p>
                     <EnhancedButton
@@ -226,7 +232,7 @@ export default function CreateCoursePage() {
                       disabled={!userInput.trim()}
                       variant="outline"
                       size="sm"
-                      className="h-9 rounded-lg border-blue-200 px-4 text-blue-600 hover:border-blue-300 hover:bg-blue-50"
+                      className="h-9 rounded-lg border-brand/30 px-4 text-brand hover:border-brand/40 hover:bg-brand/10"
                       loadingText="生成中..."
                     >
                       <Sparkles className="mr-2 h-4 w-4" />
@@ -237,12 +243,10 @@ export default function CreateCoursePage() {
 
                 {/* 生成结果预览区域 */}
                 {(title || description) && (
-                  <div className="space-y-4 rounded-xl border border-blue-200/50 bg-gradient-to-r from-blue-50/50 to-purple-50/50 p-6">
+                  <div className="space-y-4 rounded-xl border border-brand/25 bg-gradient-to-r from-brand/10 to-brand-accent/10 p-6">
                     <div className="mb-4 flex items-center gap-2">
-                      <Sparkles className="h-5 w-5 text-blue-500" />
-                      <h3 className="font-semibold text-gray-900">
-                        AI生成预览
-                      </h3>
+                      <Sparkles className="h-5 w-5 text-brand" />
+                      <h3 className="font-semibold text-foreground">AI生成预览</h3>
                       <div className="ml-auto">
                         <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800">
                           <CheckCircle className="mr-1 h-3 w-3" />
@@ -253,7 +257,7 @@ export default function CreateCoursePage() {
 
                     <div className="space-y-4">
                       <div className="group">
-                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                           <Edit3 className="h-4 w-4" />
                           课程标题
                         </label>
@@ -261,13 +265,13 @@ export default function CreateCoursePage() {
                           value={title}
                           onChange={(e) => setTitle(e.target.value)}
                           disabled={isCreating}
-                          className="h-11 rounded-lg border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          className="h-11 rounded-lg border-border bg-background/70 shadow-sm backdrop-blur focus:border-brand focus:ring-2 focus:ring-brand/20"
                           placeholder="AI生成的课程标题"
                         />
                       </div>
 
                       <div className="group">
-                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                        <label className="mb-2 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                           <Edit3 className="h-4 w-4" />
                           课程描述
                         </label>
@@ -276,13 +280,13 @@ export default function CreateCoursePage() {
                           onChange={(e) => setDescription(e.target.value)}
                           disabled={isCreating}
                           rows={4}
-                          className="resize-none rounded-lg border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20"
+                          className="resize-none rounded-lg border-border bg-background/70 shadow-sm backdrop-blur focus:border-brand focus:ring-2 focus:ring-brand/20"
                           placeholder="AI生成的课程描述"
                         />
                       </div>
                     </div>
 
-                    <p className="rounded-lg bg-white/60 p-3 text-xs text-gray-600">
+                    <p className="rounded-lg bg-background/60 p-3 text-xs text-muted-foreground">
                       💡 你可以直接使用AI生成的内容，或根据需要进行调整
                     </p>
                   </div>
@@ -292,9 +296,9 @@ export default function CreateCoursePage() {
                 <div className="group space-y-3">
                   <label
                     htmlFor="level"
-                    className="flex items-center gap-2 text-sm font-semibold text-gray-900"
+                    className="flex items-center gap-2 text-sm font-semibold text-foreground"
                   >
-                    <div className="h-2 w-2 rounded-full bg-orange-500"></div>
+                    <div className="h-2 w-2 rounded-full bg-brand-accent"></div>
                     难度级别
                   </label>
                   <Select
@@ -303,10 +307,10 @@ export default function CreateCoursePage() {
                       setLevel(value)
                     }
                   >
-                    <SelectTrigger className="h-12 rounded-xl border-2 border-gray-200 bg-white text-base transition-all duration-300 hover:border-gray-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20">
+                    <SelectTrigger className="h-12 rounded-xl border-2 border-border bg-background/70 text-base shadow-sm backdrop-blur transition-all duration-300 hover:border-border/80 focus:border-brand focus:ring-4 focus:ring-brand/20">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="rounded-xl border-0 bg-white shadow-2xl">
+                    <SelectContent className="rounded-xl border-border/60 bg-popover shadow-2xl">
                       <SelectItem
                         value="beginner"
                         className="rounded-lg py-3 text-base"
@@ -329,7 +333,7 @@ export default function CreateCoursePage() {
                           <div className="h-3 w-3 rounded-full bg-orange-500"></div>
                           <div>
                             <div className="font-medium">中级</div>
-                            <div className="text-sm text-gray-500">
+                            <div className="text-sm text-muted-foreground">
                               需要一定基础知识
                             </div>
                           </div>
@@ -345,7 +349,7 @@ export default function CreateCoursePage() {
                     type="button"
                     buttonId="create-course"
                     onAsyncClick={handleSubmit}
-                    className="group relative h-14 w-full overflow-hidden rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl active:scale-[0.98] disabled:opacity-50"
+                    className="group relative h-14 w-full overflow-hidden rounded-xl bg-gradient-to-r from-brand to-brand-accent text-lg font-semibold text-brand-foreground shadow-lg transition-all duration-300 hover:from-brand/90 hover:to-brand-accent/90 hover:shadow-xl active:scale-[0.98] disabled:opacity-50"
                     disabled={!title.trim() || !description.trim()}
                     loadingText="AI正在生成课程大纲..."
                   >
@@ -360,16 +364,16 @@ export default function CreateCoursePage() {
               </form>
 
               {/* 底部提示 */}
-              <div className="mt-8 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 p-6">
+              <div className="mt-8 rounded-xl bg-gradient-to-r from-brand/10 to-brand-accent/10 p-6">
                 <div className="flex items-start gap-4">
-                  <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-blue-100">
-                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                  <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-brand/10">
+                    <CheckCircle className="h-4 w-4 text-brand" />
                   </div>
                   <div>
-                    <h4 className="mb-2 font-semibold text-gray-900">
+                    <h4 className="mb-2 font-semibold text-foreground">
                       创建后你将获得：
                     </h4>
-                    <ul className="space-y-1 text-sm text-gray-600">
+                    <ul className="space-y-1 text-sm text-muted-foreground">
                       <li>• 完整的课程大纲和章节结构</li>
                       <li>• AI生成的详细学习内容</li>
                       <li>• 个性化的学习路径规划</li>
@@ -382,6 +386,6 @@ export default function CreateCoursePage() {
           </Card>
         </div>
       </div>
-    </div>
+    </PageShellClient>
   );
 }

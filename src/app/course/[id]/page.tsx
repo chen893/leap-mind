@@ -153,6 +153,7 @@ export default function CoursePage() {
                   chapters={course.chapters}
                   selectedChapterNumber={selectedChapterNumber}
                   chapterProgresses={chapterProgresses ?? []}
+                  isCreator={isCreator}
                   onChapterSelect={(chapterNumber) =>
                     setSelectedChapterByNumber(chapterNumber, course.chapters)
                   }
@@ -164,12 +165,13 @@ export default function CoursePage() {
           {/* 右侧：内容区 */}
           <div className="flex-1 min-w-0">
             {selectedChapterNumber !== null && (
-              <CourseContentArea
-                courseId={courseId}
-                selectedChapterNumber={selectedChapterNumber}
-                chapterProgresses={chapterProgresses ?? []}
-                selectNextChapter={selectNextChapter}
-              />
+                <CourseContentArea
+                  courseId={courseId}
+                  selectedChapterNumber={selectedChapterNumber}
+                  chapterProgresses={chapterProgresses ?? []}
+                  isCreator={isCreator}
+                  selectNextChapter={selectNextChapter}
+                />
             )}
           </div>
         </div>

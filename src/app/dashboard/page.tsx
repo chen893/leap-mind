@@ -109,17 +109,6 @@ export default function DashboardPage() {
   const handleDeleted = useCallback(() => {
     if (!courseToDelete) return;
 
-    const removeFromPages = (oldData: any) => {
-      if (!oldData) return oldData;
-      return {
-        pageParams: oldData.pageParams,
-        pages: oldData.pages.map((page: any) => ({
-          ...page,
-          courses: page.courses.filter((p: any) => p.course.id !== courseToDelete.id),
-        })),
-      };
-    };
-
     // 使 getUserCourses 缓存失效，重新获取
     void utils.course.getUserCourses.invalidate();
 

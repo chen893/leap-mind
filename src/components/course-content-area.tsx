@@ -22,6 +22,7 @@ export function CourseContentArea({
   courseId,
   selectedChapterNumber,
   chapterProgresses,
+  isCreator,
   selectNextChapter,
 }: CourseContentAreaProps) {
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
@@ -33,15 +34,11 @@ export function CourseContentArea({
     (c) => c.chapterNumber === selectedChapterNumber,
   );
 
-  const { data: chapter, isLoading } = api.course.getChapterById.useQuery(
-    { chapterId: selectedChapter?.id ?? "" },
-    { enabled: !!selectedChapter },
-  );
-
   const chapterProgress = chapterProgresses.find(
     (p) => p.chapterId === selectedChapter?.id,
   );
   const isUnlocked =
+    isCreator ||
     chapterProgress?.status === "UNLOCKED" ||
     chapterProgress?.status === "COMPLETED" ||
     selectedChapterNumber === 1;
@@ -64,18 +61,7 @@ export function CourseContentArea({
     };
   }, [questionsReady, selectedChapter?.id, questionCount, questionsSource]);
 
-  if (isLoading) {
-    return (
-      <div className="rounded-xl bg-white/60 backdrop-blur-sm p-8 ring-1 ring-amber-100/80">
-        <div className="flex items-center justify-center py-8">
-          <div className="h-8 w-8 rounded-full border-3 border-amber-200 border-t-amber-500 animate-spin" />
-          <span className="ml-3 text-sm text-amber-700">加载中...</span>
-        </div>
-      </div>
-    );
-  }
-
-  if (!chapter) {
+  if (!selectedChapter) {
     return (
       <div className="rounded-xl bg-white/60 backdrop-blur-sm p-8 ring-1 ring-amber-100/80 text-center">
         <BookOpen className="h-10 w-10 text-amber-400 mx-auto mb-3" />
@@ -118,10 +104,11 @@ export function CourseContentArea({
         <div className="rounded-xl bg-white/60 backdrop-blur-sm ring-1 ring-amber-100/80">
           <div className="p-5">
             <ChapterContent
-              key={chapter.id}
+              key={selectedChapter.id}
               courseId={courseId}
               chapterNumber={selectedChapterNumber ?? 1}
               isUnlocked={isUnlocked}
+              isCreator={isCreator}
             />
           </div>
 
@@ -170,8 +157,8 @@ export function CourseContentArea({
         <LearningVerificationDialog
           open={showVerificationDialog}
           onOpenChange={setShowVerificationDialog}
-          chapterId={chapter.id}
-          chapterTitle={chapter.title}
+          chapterId={selectedChapter.id}
+          chapterTitle={selectedChapter.title}
           courseId={courseId}
           onComplete={selectNextChapter}
         />
@@ -180,7 +167,10 @@ export function CourseContentArea({
       {/* AI 助手 */}
       <TabsContent value="chat" className="mt-0">
         <div className="rounded-xl bg-white/60 backdrop-blur-sm ring-1 ring-amber-100/80">
-          <AIChatPanel courseId={courseId} chapterNumber={Number(chapter.id)} />
+          <AIChatPanel
+            courseId={courseId}
+            chapterNumber={selectedChapterNumber ?? 1}
+          />
         </div>
       </TabsContent>
     </Tabs>

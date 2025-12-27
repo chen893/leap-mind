@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -67,19 +68,25 @@ export const courseRouter = createTRPCRouter({
           ),
         );
 
-        // 创建用户课程进度记录
-        await ctx.db.userCourseProgress.create({
-          data: {
-            userId: ctx.session.user.id,
-            courseId: course.id,
-            status: "IN_PROGRESS",
-          },
-        });
+      // 创建用户课程进度记录
+      await ctx.db.userCourseProgress.create({
+        data: {
+          userId: ctx.session.user.id,
+          courseId: course.id,
+          status: "IN_PROGRESS",
+        },
+      });
 
-        // 解锁第一章
-        const firstChapter = chapters[0];
-        if (firstChapter) {
-          await ctx.db.userChapterProgress.create({
+      // 创建者默认算作 1 个学习者
+      await ctx.db.course.update({
+        where: { id: course.id },
+        data: { joinedByCount: { increment: 1 } },
+      });
+
+      // 解锁第一章
+      const firstChapter = chapters[0];
+      if (firstChapter) {
+        await ctx.db.userChapterProgress.create({
             data: {
               userId: ctx.session.user.id,
               chapterId: firstChapter.id,
@@ -97,7 +104,10 @@ export const courseRouter = createTRPCRouter({
       } catch (error) {
         // 如果AI生成失败，回退到基础章节结构
         console.error("AI outline generation failed:", error);
-        throw new Error("Failed to generate course outline");
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to generate course outline",
+        });
       }
     }),
 
@@ -167,6 +177,7 @@ export const courseRouter = createTRPCRouter({
           updatedAt: "desc",
         },
         take: limit + 1,
+        skip: cursor ? 1 : 0,
         cursor: cursor ? { id: cursor } : undefined,
       });
 
@@ -220,15 +231,44 @@ export const courseRouter = createTRPCRouter({
             orderBy: {
               chapterNumber: "asc",
             },
+            select: {
+              id: true,
+              chapterNumber: true,
+              title: true,
+              description: true,
+              createdAt: true,
+              lastUpdated: true,
+            },
           },
+          ...(ctx.session?.user?.id
+            ? {
+                userProgresses: {
+                  where: { userId: ctx.session.user.id },
+                  select: { id: true },
+                },
+              }
+            : {}),
         },
       });
 
       if (!course) {
-        throw new Error("Course not found");
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
-      return course;
+      const isCreator =
+        !!ctx.session?.user?.id && course.creatorId === ctx.session.user.id;
+      const isEnrolled = (course.userProgresses?.length ?? 0) > 0;
+
+      if (!course.isPublic && !isCreator && !isEnrolled) {
+        // 避免泄露私有课程是否存在
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      // 不把 userProgresses 泄露给前端
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { userProgresses: _userProgresses, ...safeCourse } = course;
+
+      return safeCourse;
     }),
 
   // 获取公开课程列表（内容广场）
@@ -268,6 +308,7 @@ export const courseRouter = createTRPCRouter({
           joinedByCount: "desc",
         },
         take: input.limit + 1,
+        skip: input.cursor ? 1 : 0,
         cursor: input.cursor ? { id: input.cursor } : undefined,
       });
 
@@ -295,7 +336,7 @@ export const courseRouter = createTRPCRouter({
       });
 
       if (!course) {
-        throw new Error("Course not found or unauthorized");
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       const updatedCourse = await ctx.db.course.update({
@@ -306,20 +347,6 @@ export const courseRouter = createTRPCRouter({
       });
 
       return updatedCourse;
-    }),
-
-  getChapterById: protectedProcedure
-    .input(z.object({ chapterId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const chapter = await ctx.db.chapter.findUnique({
-        where: { id: input.chapterId },
-      });
-
-      if (!chapter) {
-        throw new Error("Chapter not found");
-      }
-
-      return chapter;
     }),
 
   // 删除课程
@@ -343,7 +370,7 @@ export const courseRouter = createTRPCRouter({
       });
 
       if (!course) {
-        throw new Error("Course not found or unauthorized");
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       // 注意：由于 UserChapterProgress.chapter 的外键 onDelete 可能为 NoAction，

@@ -2,6 +2,7 @@
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
 import { streamText } from "ai";
+import { z } from "zod";
 import {
   // openaiChatModel,
   defaultModel,
@@ -17,13 +18,18 @@ export async function POST(req: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const { chapterId, courseTitle, chapterTitle, level } =
-      (await req.json()) as {
-        chapterId: string;
-        courseTitle: string;
-        chapterTitle: string;
-        level: string;
-      };
+    const bodySchema = z.object({
+      chapterId: z.string().min(1),
+      level: z.enum(["beginner", "intermediate"]).default("intermediate"),
+      regenerate: z.boolean().default(false),
+    });
+
+    const parsed = bodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response("Invalid request body", { status: 400 });
+    }
+
+    const { chapterId, level, regenerate } = parsed.data;
 
     // 验证章节存在且用户有权限
     const chapter = await db.chapter.findUnique({
@@ -41,11 +47,6 @@ export async function POST(req: Request) {
                 description: true,
               },
             },
-            userProgresses: {
-              where: {
-                userId: session.user.id,
-              },
-            },
           },
         },
       },
@@ -54,26 +55,24 @@ export async function POST(req: Request) {
     if (!chapter) {
       return new Response("Chapter not found", { status: 404 });
     }
-    // const course = chapter.course;
-    // 检查用户权限（创建者或学习者）
-    const hasAccess =
-      chapter.course.creatorId === session.user.id ||
-      chapter.course.userProgresses.length > 0;
-
-    if (!hasAccess) {
+    // 仅允许课程创建者生成/重生成章节内容（避免学习者修改共享内容）
+    const isCreator = chapter.course.creatorId === session.user.id;
+    if (!isCreator) {
       return new Response("Unauthorized", { status: 403 });
     }
 
     // 如果内容已存在，直接返回
-    // if (chapter.contentMd) {
-    // 	return new Response(chapter.contentMd, {
-    // 		headers: {
-    // 			"Content-Type": "text/plain; charset=utf-8",
-    // 		},
-    // 	});
-    // }
+    if (chapter.contentMd && !regenerate) {
+      return new Response(chapter.contentMd, {
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+        },
+      });
+    }
 
     const chapters = chapter.course.chapters;
+    const courseTitle = chapter.course.title;
+    const chapterTitle = chapter.title;
     // 构建AI提示词
 
     let teachingFocusInstruction = "";

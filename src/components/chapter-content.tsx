@@ -20,6 +20,7 @@ export function ChapterContent({
   courseId,
   chapterNumber,
   isUnlocked,
+  isCreator,
 }: ChapterContentProps) {
   const { toast } = useToast();
 
@@ -72,6 +73,7 @@ export function ChapterContent({
 
   const count = useRef(0);
   const handleGenerateContent = () => {
+    if (!isCreator) return;
     if (!chapter) return;
     count.current++;
 
@@ -80,7 +82,8 @@ export function ChapterContent({
         chapterId: chapter.id,
         courseTitle: course?.title,
         chapterTitle: chapter.title,
-        level: "初学者",
+        level: "beginner",
+        regenerate: !!chapter.contentMd,
       },
     });
   };
@@ -128,7 +131,7 @@ export function ChapterContent({
 
         <Button
           onClick={handleGenerateContent}
-          disabled={isGenerating}
+          disabled={isGenerating || !isCreator}
           size="sm"
           className={`shrink-0 ${
             chapter.contentMd

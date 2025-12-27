@@ -6,9 +6,9 @@ import "./src/env.js";
 
 /** @type {import("next").NextConfig} */
 const config = {
-  experimental: {
+  experimental: /** @type {any} */ ({
     instrumentationHook: true,
-  },
+  }),
 };
 
 export default config;

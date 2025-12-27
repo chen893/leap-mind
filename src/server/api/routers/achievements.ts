@@ -1,10 +1,8 @@
-import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { type Achievement, type AchievementCategory } from "@prisma/client";
+import { PointsReason, type AchievementCategory } from "@prisma/client";
+import { updateUserPoints } from "@/server/api/routers/learningVerification";
 import {
   type AchievementCreateData,
-  type UnlockedAchievement,
-  type AchievementCondition,
 } from "@/types/learning-verification";
 
 export const achievementsRouter = createTRPCRouter({
@@ -171,24 +169,14 @@ export const achievementsRouter = createTRPCRouter({
         });
 
         // 奖励积分
-        if (userPoints && achievement.points > 0) {
-          await ctx.db.userPoints.update({
-            where: { userId },
-            data: {
-              totalPoints: userPoints.totalPoints + achievement.points,
-              currentExp: userPoints.currentExp + achievement.points,
-            },
-          });
-
-          // 记录积分历史
-          await ctx.db.pointsHistory.create({
-            data: {
-              userId,
-              pointsChange: achievement.points,
-              reason: "ACHIEVEMENT_UNLOCK",
-              description: `解锁成就: ${achievement.name}`,
-            },
-          });
+        if (achievement.points > 0) {
+          await updateUserPoints(
+            ctx,
+            achievement.points,
+            PointsReason.ACHIEVEMENT_UNLOCK,
+            achievement.id,
+            `解锁成就: ${achievement.name}`,
+          );
         }
 
         newAchievements.push({

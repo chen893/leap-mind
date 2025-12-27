@@ -350,7 +350,7 @@ export const learningVerificationRouter = createTRPCRouter({
 
         if (existingAnswer) {
           // 检查答案是否相同
-          if (existingAnswer.answer !== answer) {
+          if (existingAnswer.answer !== answer || !existingAnswer.aiScore) {
             // 答案不同，需要重新评估
             await ctx.db.userQuestionAnswer.update({
               where: { id: existingAnswer.id },

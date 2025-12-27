@@ -48,9 +48,9 @@ switch (process.env.DEFAULT_MODEL) {
   default:
     defaultModel = openaiModel;
 }
-
+// defaultModel = googleModel;
 export { defaultModel };
-const MAX_TOKENS = 16000;
+const MAX_TOKENS = 8000;
 // 统一的生成参数配置
 export const DEFAULT_GENERATION_CONFIG = {
   temperature: 0.7,

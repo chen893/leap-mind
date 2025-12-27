@@ -29,6 +29,9 @@ export default function DashboardPage() {
     chapters: { id: string; title: string }[];
   } | null>(null);
 
+  // tRPC utils（必须在组件顶层调用）
+  const utils = api.useUtils();
+
   // 学习中的课程查询
   const {
     data: inProgressData,
@@ -37,12 +40,15 @@ export default function DashboardPage() {
     hasNextPage: hasNextInProgress,
     isFetchingNextPage: isFetchingNextInProgress,
   } = api.course.getUserCourses.useInfiniteQuery(
-    {
+    ({ pageParam }: { pageParam: string | undefined }) => ({
       limit: 10,
-      status: "IN_PROGRESS",
-    },
+      status: "IN_PROGRESS" as const,
+      cursor: pageParam,
+    }),
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialCursor: undefined,
+      enabled: !!session,
     },
   );
 
@@ -54,12 +60,15 @@ export default function DashboardPage() {
     hasNextPage: hasNextCompleted,
     isFetchingNextPage: isFetchingNextCompleted,
   } = api.course.getUserCourses.useInfiniteQuery(
-    {
+    ({ pageParam }: { pageParam: string | undefined }) => ({
       limit: 10,
-      status: "COMPLETED",
-    },
+      status: "COMPLETED" as const,
+      cursor: pageParam,
+    }),
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialCursor: undefined,
+      enabled: !!session,
     },
   );
 
@@ -71,12 +80,15 @@ export default function DashboardPage() {
     hasNextPage: hasNextCreated,
     isFetchingNextPage: isFetchingNextCreated,
   } = api.course.getUserCourses.useInfiniteQuery(
-    {
+    ({ pageParam }: { pageParam: string | undefined }) => ({
       limit: 10,
       createdByMe: true,
-    },
+      cursor: pageParam,
+    }),
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
+      initialCursor: undefined,
+      enabled: !!session,
     },
   );
 
@@ -93,30 +105,27 @@ export default function DashboardPage() {
     [],
   );
 
-  // 删除成功后本地移除列表项：重新过滤createdData的pages
+  // 删除成功后本地移除列表项：同时更新三个标签页的缓存
   const handleDeleted = useCallback(() => {
     if (!courseToDelete) return;
-    // 直接在缓存中移除已删除课程，避免整页刷新
-    api
-      .useUtils()
-      .course.getUserCourses.setInfiniteData(
-        { limit: 10, createdByMe: true },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            pageParams: oldData.pageParams,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              courses: page.courses.filter(
-                (p) => p.course.id !== courseToDelete.id,
-              ),
-            })),
-          };
-        },
-      );
+
+    const removeFromPages = (oldData: any) => {
+      if (!oldData) return oldData;
+      return {
+        pageParams: oldData.pageParams,
+        pages: oldData.pages.map((page: any) => ({
+          ...page,
+          courses: page.courses.filter((p: any) => p.course.id !== courseToDelete.id),
+        })),
+      };
+    };
+
+    // 使 getUserCourses 缓存失效，重新获取
+    void utils.course.getUserCourses.invalidate();
+
     setCourseToDelete(null);
     setDeleteDialogOpen(false);
-  }, [courseToDelete]);
+  }, [courseToDelete, utils]);
 
   // 合并各标签页的分页数据
   const inProgressCourses = useMemo(() => {

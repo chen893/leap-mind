@@ -1,7 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { CourseState } from "@/types/store";
-import type { Chapter } from "@prisma/client";
+import type { CourseChapter, CourseState } from "@/types/store";
 
 export const useCourseStore = create<CourseState>()(
   devtools(
@@ -9,7 +8,7 @@ export const useCourseStore = create<CourseState>()(
       selectedChapter: null,
       selectedChapterNumber: null,
 
-      setSelectedChapter: (chapter: Chapter) => {
+      setSelectedChapter: (chapter: CourseChapter) => {
         set({
           selectedChapter: chapter,
           selectedChapterNumber: chapter.chapterNumber,
@@ -18,7 +17,7 @@ export const useCourseStore = create<CourseState>()(
 
       setSelectedChapterByNumber: (
         chapterNumber: number,
-        chapters: Chapter[],
+        chapters: CourseChapter[],
       ) => {
         const chapter = chapters.find((c) => c.chapterNumber === chapterNumber);
         if (chapter) {

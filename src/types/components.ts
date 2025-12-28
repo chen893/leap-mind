@@ -10,9 +10,10 @@ import type { Course, UserCourseProgress } from "@prisma/client";
 
 // ===== Chapter Components =====
 export interface ChapterListProps {
-  chapters: Chapter[];
+  chapters: Array<Pick<Chapter, "id" | "chapterNumber" | "title">>;
   selectedChapterNumber: number | null;
   chapterProgresses: UserChapterProgress[];
+  isCreator?: boolean;
   onChapterSelect: (chapterNumber: number) => void;
 }
 
@@ -20,6 +21,7 @@ export interface CourseContentAreaProps {
   courseId: string;
   selectedChapterNumber: number | null;
   chapterProgresses: UserChapterProgress[];
+  isCreator: boolean;
   selectNextChapter: (onlyRefresh?: boolean) => void;
 }
 
@@ -27,6 +29,7 @@ export interface ChapterContentProps {
   courseId: string;
   chapterNumber: number;
   isUnlocked: boolean;
+  isCreator: boolean;
 }
 
 // ===== Course Components =====

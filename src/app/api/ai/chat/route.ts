@@ -1,8 +1,8 @@
 import { streamText } from "ai";
 import { auth } from "@/server/auth";
 import { db } from "@/server/db";
+import { z } from "zod";
 import {
-  openaiChatModel,
   defaultModel,
   CHAT_GENERATION_CONFIG,
 } from "@/lib/openai";
@@ -13,25 +13,40 @@ export async function POST(req: Request) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    const body = await req.json() as unknown;
-    const {
-      courseId,
-      chapterNumber,
-      messages,
-    } = body as {
-      courseId: string;
-      chapterNumber: number;
-      messages: Array<{ role: string; content: string }>;
-    };
+    const bodySchema = z.object({
+      courseId: z.string().min(1),
+      chapterNumber: z.number().int().positive(),
+      messages: z.array(
+        z.object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string(),
+        }),
+      ),
+    });
+
+    const parsed = bodySchema.safeParse(await req.json());
+    if (!parsed.success) {
+      return new Response("Invalid request body", { status: 400 });
+    }
+
+    const { courseId, chapterNumber, messages } = parsed.data;
     // 验证章节存在
     const course = await db.course.findUnique({
       where: { id: courseId },
-      include: {
+      select: {
+        id: true,
+        creatorId: true,
+        isPublic: true,
+        userProgresses: {
+          where: { userId: session.user.id },
+          select: { id: true },
+        },
         chapters: {
           orderBy: {
             chapterNumber: "asc",
           },
           select: {
+            id: true,
             contentMd: true,
             chapterNumber: true,
           },
@@ -41,9 +56,41 @@ export async function POST(req: Request) {
     if (!course) {
       return new Response("Course not found", { status: 404 });
     }
+
+    const isCreator = course.creatorId === session.user.id;
+    const isEnrolled = course.userProgresses.length > 0;
+
+    // AI 对话会产生消耗：要求必须已加入课程（或创建者）
+    if (!isCreator && !isEnrolled) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
     const chapter = course.chapters.find(
       (chapter) => chapter.chapterNumber === chapterNumber,
-    ) as { contentMd: string; chapterNumber: number } | undefined;
+    ) as
+      | { id: string; contentMd: string | null; chapterNumber: number }
+      | undefined;
+
+    if (!chapter) {
+      return new Response("Chapter not found", { status: 404 });
+    }
+
+    // 非创建者：章节必须已解锁（允许第 1 章）
+    if (!isCreator && chapterNumber !== 1) {
+      const chapterProgress = await db.userChapterProgress.findUnique({
+        where: {
+          userId_chapterId: {
+            userId: session.user.id,
+            chapterId: chapter.id,
+          },
+        },
+        select: { status: true },
+      });
+
+      if (!chapterProgress || chapterProgress.status === "LOCKED") {
+        return new Response("Chapter is locked", { status: 403 });
+      }
+    }
 
     //     let prompt = '';
 
@@ -125,11 +172,11 @@ export async function POST(req: Request) {
       messages: [
         {
           role: "system" as const,
-          content: chapter?.contentMd ?? "",
+          content: chapter.contentMd ?? "",
         },
-        ...messages.map(msg => ({
-          role: msg.role as "user" | "assistant",
-          content: msg.content
+        ...messages.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
         })),
       ],
       ...CHAT_GENERATION_CONFIG,

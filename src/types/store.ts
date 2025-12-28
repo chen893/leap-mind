@@ -15,6 +15,11 @@ import type {
   Questions,
 } from "@/types/api";
 
+export type CourseChapter = Pick<
+  Chapter,
+  "id" | "chapterNumber" | "title" | "description" | "createdAt" | "lastUpdated"
+>;
+
 // ===== Points Store Types =====
 export interface PointsUpdateResult {
   newLevel: number;
@@ -115,12 +120,12 @@ export type LearningVerificationStore = LearningVerificationState &
 
 // ===== Course Store Types =====
 export interface CourseState {
-  selectedChapter: Chapter | null;
+  selectedChapter: CourseChapter | null;
   selectedChapterNumber: number | null;
-  setSelectedChapter: (chapter: Chapter) => void;
+  setSelectedChapter: (chapter: CourseChapter) => void;
   setSelectedChapterByNumber: (
     chapterNumber: number,
-    chapters: Chapter[],
+    chapters: CourseChapter[],
   ) => void;
   reset: () => void;
 }

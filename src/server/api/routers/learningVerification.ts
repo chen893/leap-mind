@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
 import {
   createTRPCRouter,
   protectedProcedure,
@@ -8,7 +9,7 @@ import {
   generateChapterQuestions,
   evaluateAnswersBatch,
 } from "@/lib/course-ai";
-import { type PointsReason } from "@prisma/client";
+import { PointsReason } from "@prisma/client";
 
 // 积分更新结果类型
 interface PointsUpdateResult {
@@ -42,7 +43,7 @@ export const learningVerificationRouter = createTRPCRouter({
       });
 
       if (!chapter) {
-        throw new Error("Chapter not found");
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       // 检查用户权限（创建者或学习者）
@@ -51,7 +52,7 @@ export const learningVerificationRouter = createTRPCRouter({
         chapter.course.userProgresses.length > 0;
 
       if (!hasAccess) {
-        throw new Error("Unauthorized");
+        throw new TRPCError({ code: "FORBIDDEN" });
       }
 
       // 检查用户是否有权限访问此章节（是否已解锁）
@@ -66,7 +67,7 @@ export const learningVerificationRouter = createTRPCRouter({
         });
 
         if (!chapterProgress || chapterProgress.status === "LOCKED") {
-          throw new Error("Chapter is locked");
+          throw new TRPCError({ code: "FORBIDDEN", message: "Chapter is locked" });
         }
       }
 
@@ -181,7 +182,10 @@ export const learningVerificationRouter = createTRPCRouter({
         };
       } catch (error) {
         console.error("Failed to generate questions:", error);
-        throw new Error("生成问题失败，请稍后重试");
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "生成问题失败，请稍后重试",
+        });
       }
     }),
 
@@ -189,6 +193,48 @@ export const learningVerificationRouter = createTRPCRouter({
   getQuestions: protectedProcedure
     .input(z.object({ chapterId: z.string() }))
     .query(async ({ ctx, input }) => {
+      const chapter = await ctx.db.chapter.findUnique({
+        where: { id: input.chapterId },
+        include: {
+          course: {
+            include: {
+              userProgresses: {
+                where: { userId: ctx.session.user.id },
+                select: { id: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (!chapter) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const hasAccess =
+        chapter.course.creatorId === ctx.session.user.id ||
+        chapter.course.userProgresses.length > 0;
+
+      if (!hasAccess) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      if (chapter.course.creatorId !== ctx.session.user.id) {
+        const chapterProgress = await ctx.db.userChapterProgress.findUnique({
+          where: {
+            userId_chapterId: {
+              userId: ctx.session.user.id,
+              chapterId: input.chapterId,
+            },
+          },
+          select: { status: true },
+        });
+
+        if (!chapterProgress || chapterProgress.status === "LOCKED") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Chapter is locked" });
+        }
+      }
+
       const questions = await ctx.db.chapterQuestion.findMany({
         where: { chapterId: input.chapterId },
         orderBy: { questionNumber: "asc" },
@@ -222,6 +268,7 @@ export const learningVerificationRouter = createTRPCRouter({
                 include: {
                   userProgresses: {
                     where: { userId: ctx.session.user.id },
+                    select: { id: true },
                   },
                 },
               },
@@ -231,7 +278,7 @@ export const learningVerificationRouter = createTRPCRouter({
       });
 
       if (!question) {
-        throw new Error("Question not found");
+        throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       // 检查用户权限
@@ -240,7 +287,24 @@ export const learningVerificationRouter = createTRPCRouter({
         question.chapter.course.userProgresses.length > 0;
 
       if (!hasAccess) {
-        throw new Error("Unauthorized");
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      // 非创建者：章节必须已解锁
+      if (question.chapter.course.creatorId !== ctx.session.user.id) {
+        const chapterProgress = await ctx.db.userChapterProgress.findUnique({
+          where: {
+            userId_chapterId: {
+              userId: ctx.session.user.id,
+              chapterId: question.chapterId,
+            },
+          },
+          select: { status: true },
+        });
+
+        if (!chapterProgress || chapterProgress.status === "LOCKED") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Chapter is locked" });
+        }
       }
 
       // 检查是否已经回答过
@@ -309,7 +373,14 @@ export const learningVerificationRouter = createTRPCRouter({
         include: {
           chapter: {
             include: {
-              course: true,
+              course: {
+                include: {
+                  userProgresses: {
+                    where: { userId: ctx.session.user.id },
+                    select: { id: true },
+                  },
+                },
+              },
             },
           },
         },
@@ -317,7 +388,38 @@ export const learningVerificationRouter = createTRPCRouter({
       });
 
       if (questions.length === 0) {
-        throw new Error("No questions found for this chapter");
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No questions found for this chapter",
+        });
+      }
+
+      const chapter = questions[0]?.chapter;
+      if (!chapter) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
+
+      const isCreator = chapter.course.creatorId === ctx.session.user.id;
+      const isEnrolled = chapter.course.userProgresses.length > 0;
+
+      if (!isCreator && !isEnrolled) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      if (!isCreator) {
+        const chapterProgress = await ctx.db.userChapterProgress.findUnique({
+          where: {
+            userId_chapterId: {
+              userId: ctx.session.user.id,
+              chapterId: input.chapterId,
+            },
+          },
+          select: { status: true },
+        });
+
+        if (!chapterProgress || chapterProgress.status === "LOCKED") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Chapter is locked" });
+        }
       }
 
       // 检查是否所有问题都有答案
@@ -327,9 +429,10 @@ export const learningVerificationRouter = createTRPCRouter({
       );
 
       if (missingAnswers.length > 0) {
-        throw new Error(
-          `请先完成所有问题的回答。还有 ${missingAnswers.length} 个问题未完成或答案过短（至少10个字符）。`,
-        );
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: `请先完成所有问题的回答。还有 ${missingAnswers.length} 个问题未完成或答案过短（至少10个字符）。`,
+        });
       }
 
       // 先保存所有答案到数据库，并收集需要重新评估的问题
@@ -350,7 +453,7 @@ export const learningVerificationRouter = createTRPCRouter({
 
         if (existingAnswer) {
           // 检查答案是否相同
-          if (existingAnswer.answer !== answer || !existingAnswer.aiScore) {
+          if (existingAnswer.answer !== answer || existingAnswer.aiScore == null) {
             // 答案不同，需要重新评估
             await ctx.db.userQuestionAnswer.update({
               where: { id: existingAnswer.id },
@@ -377,7 +480,6 @@ export const learningVerificationRouter = createTRPCRouter({
         }
       }
 
-      const chapterQuestions = [];
       let totalScore = 0;
       let passedQuestions = 0;
 
@@ -409,8 +511,6 @@ export const learningVerificationRouter = createTRPCRouter({
             );
             if (!question) continue;
 
-            const answerText = input.answers[question.id]!;
-
             // 更新答案记录
             const userAnswer = await ctx.db.userQuestionAnswer.findUnique({
               where: {
@@ -435,11 +535,10 @@ export const learningVerificationRouter = createTRPCRouter({
           }
         } catch (error) {
           console.error("Failed to evaluate answers:", error);
-          // 如果AI批量评估失败，给予默认分数
-          for (const question of questionsNeedingEvaluation) {
-            const answerText = input.answers[question.id];
-            if (!answerText) continue;
-          }
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: "AI评估失败，请稍后重试",
+          });
         }
       }
 
@@ -481,7 +580,6 @@ export const learningVerificationRouter = createTRPCRouter({
 
       // 如果通过验证，更新章节进度
       if (canProgress) {
-        const chapter = questions[0]?.chapter;
         if (chapter) {
           // 更新当前章节状态为完成
           await ctx.db.userChapterProgress.upsert({
@@ -537,7 +635,12 @@ export const learningVerificationRouter = createTRPCRouter({
         }
 
         // 更新用户积分
-        await updateUserPoints(ctx, pointsEarned, "CHAPTER_COMPLETION");
+        await updateUserPoints(
+          ctx,
+          pointsEarned,
+          PointsReason.CHAPTER_COMPLETION,
+          input.chapterId,
+        );
       }
 
       // 首先尝试获取已存在的问题（包含用户答案）
@@ -611,51 +714,88 @@ export const learningVerificationRouter = createTRPCRouter({
   initializeCourseProgress: protectedProcedure
     .input(z.object({ courseId: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      // 创建用户课程进度记录
-      const courseProgress = await ctx.db.userCourseProgress.upsert({
-        where: {
-          userId_courseId: {
-            userId: ctx.session.user.id,
-            courseId: input.courseId,
-          },
-        },
-        update: {},
-        create: {
-          userId: ctx.session.user.id,
-          courseId: input.courseId,
-          status: "IN_PROGRESS",
-        },
+      const course = await ctx.db.course.findUnique({
+        where: { id: input.courseId },
+        select: { id: true, isPublic: true, creatorId: true },
       });
 
-      // 解锁第一章
-      const firstChapter = await ctx.db.chapter.findFirst({
-        where: {
-          courseId: input.courseId,
-          chapterNumber: 1,
-        },
-      });
+      if (!course) {
+        throw new TRPCError({ code: "NOT_FOUND" });
+      }
 
-      if (firstChapter) {
-        await ctx.db.userChapterProgress.upsert({
+      const userId = ctx.session.user.id;
+      const isCreator = course.creatorId === userId;
+      if (!course.isPublic && !isCreator) {
+        throw new TRPCError({ code: "FORBIDDEN" });
+      }
+
+      const courseProgress = await ctx.db.$transaction(async (tx) => {
+        const existing = await tx.userCourseProgress.findUnique({
           where: {
-            userId_chapterId: {
-              userId: ctx.session.user.id,
-              chapterId: firstChapter.id,
+            userId_courseId: {
+              userId,
+              courseId: input.courseId,
             },
           },
-          update: {
-            status: "UNLOCKED",
-            unlockedAt: new Date(),
+          select: { id: true },
+        });
+
+        const enrollment = await tx.userCourseProgress.upsert({
+          where: {
+            userId_courseId: {
+              userId,
+              courseId: input.courseId,
+            },
           },
+          update: {},
           create: {
-            userId: ctx.session.user.id,
+            userId,
             courseId: input.courseId,
-            chapterId: firstChapter.id,
-            status: "UNLOCKED",
-            unlockedAt: new Date(),
+            status: "IN_PROGRESS",
           },
         });
-      }
+
+        // 仅在首次加入时递增学习人数
+        if (!existing) {
+          await tx.course.update({
+            where: { id: input.courseId },
+            data: { joinedByCount: { increment: 1 } },
+          });
+        }
+
+        // 解锁第一章
+        const firstChapter = await tx.chapter.findFirst({
+          where: {
+            courseId: input.courseId,
+            chapterNumber: 1,
+          },
+          select: { id: true },
+        });
+
+        if (firstChapter) {
+          await tx.userChapterProgress.upsert({
+            where: {
+              userId_chapterId: {
+                userId,
+                chapterId: firstChapter.id,
+              },
+            },
+            update: {
+              status: "UNLOCKED",
+              unlockedAt: new Date(),
+            },
+            create: {
+              userId,
+              courseId: input.courseId,
+              chapterId: firstChapter.id,
+              status: "UNLOCKED",
+              unlockedAt: new Date(),
+            },
+          });
+        }
+
+        return enrollment;
+      });
 
       return courseProgress;
     }),
@@ -667,10 +807,11 @@ export async function updateUserPoints(
   points: number,
   reason: PointsReason,
   relatedId?: string,
+  description?: string,
 ): Promise<PointsUpdateResult> {
   // 获取或创建用户积分记录
   if (!ctx.session?.user?.id) {
-    throw new Error("用户未登录");
+    throw new TRPCError({ code: "UNAUTHORIZED" });
   }
   let userPoints = await ctx.db.userPoints.findUnique({
     where: { userId: ctx.session.user.id },
@@ -690,38 +831,28 @@ export async function updateUserPoints(
 
   // 计算新的积分和等级
   const newTotalPoints = userPoints.totalPoints + points;
-  const newCurrentExp = userPoints.currentExp + points;
+  let remainingExp = userPoints.currentExp + points;
   let newLevel = userPoints.level;
   let newExpToNextLevel = userPoints.expToNextLevel;
 
-  // 检查是否升级
-  if (newCurrentExp >= userPoints.expToNextLevel) {
+  // 检查是否升级（支持一次获得多级经验）
+  while (remainingExp >= newExpToNextLevel) {
+    remainingExp -= newExpToNextLevel;
     newLevel += 1;
-    const remainingExp = newCurrentExp - userPoints.expToNextLevel;
     newExpToNextLevel = newLevel * 100; // 每级需要的经验值递增
-
-    // 更新用户积分
-    await ctx.db.userPoints.update({
-      where: { userId: ctx.session.user.id },
-      data: {
-        totalPoints: newTotalPoints,
-        level: newLevel,
-        currentExp: remainingExp,
-        expToNextLevel: newExpToNextLevel,
-        lastActiveDate: new Date(),
-      },
-    });
-  } else {
-    // 更新用户积分
-    await ctx.db.userPoints.update({
-      where: { userId: ctx.session.user.id },
-      data: {
-        totalPoints: newTotalPoints,
-        currentExp: newCurrentExp,
-        lastActiveDate: new Date(),
-      },
-    });
   }
+
+  // 更新用户积分
+  await ctx.db.userPoints.update({
+    where: { userId: ctx.session.user.id },
+    data: {
+      totalPoints: newTotalPoints,
+      level: newLevel,
+      currentExp: remainingExp,
+      expToNextLevel: newExpToNextLevel,
+      lastActiveDate: new Date(),
+    },
+  });
 
   // 记录积分历史
   await ctx.db.pointsHistory.create({
@@ -730,6 +861,7 @@ export async function updateUserPoints(
       pointsChange: points,
       reason,
       relatedId,
+      description,
     },
   });
 

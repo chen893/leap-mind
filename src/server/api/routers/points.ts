@@ -46,6 +46,7 @@ export const pointsRouter = createTRPCRouter({
         where: { userId: ctx.session.user.id },
         orderBy: { createdAt: "desc" },
         take: input.limit + 1,
+        skip: input.cursor ? 1 : 0,
         cursor: input.cursor ? { id: input.cursor } : undefined,
       });
 

@@ -11,6 +11,7 @@ export function ChapterList({
   chapters,
   selectedChapterNumber,
   chapterProgresses,
+  isCreator = false,
   onChapterSelect,
 }: ChapterListProps) {
   return (
@@ -21,6 +22,7 @@ export function ChapterList({
             (p) => p.chapterId === chapter.id,
           );
           const isUnlocked =
+            isCreator ||
             chapterProgress?.status === "UNLOCKED" ||
             chapterProgress?.status === "COMPLETED" ||
             chapter.chapterNumber === 1;

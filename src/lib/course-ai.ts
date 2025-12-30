@@ -154,6 +154,66 @@ export async function generateTitleAndDescription({
 }
 
 /**
+ * 根据用户反馈优化课程标题和描述
+ */
+export async function refineTitleAndDescription({
+  currentTitle,
+  currentDescription,
+  userFeedback,
+  level,
+}: {
+  currentTitle: string;
+  currentDescription: string;
+  userFeedback: string;
+  level: "beginner" | "intermediate" | "advanced";
+}): Promise<TitleDescriptionResult> {
+  const levelText = level === "beginner" ? "初学者/零基础" : level === "intermediate" ? "有一定基础" : "进阶/高级";
+
+  const prompt = `
+角色: 你是一位经验丰富的在线课程设计师。你需要根据用户的反馈意见，优化已有的课程标题和描述。
+
+当前课程信息:
+- 标题: ${currentTitle}
+- 描述: ${currentDescription}
+- 目标学习者水平: ${levelText}
+
+用户反馈: ${userFeedback}
+
+任务:
+请根据用户的反馈意见，对课程标题和描述进行针对性的优化。保持原有内容的核心要点，同时融入用户的修改建议。
+
+要求:
+1. 认真理解用户反馈的具体需求
+2. 保持与目标学习者水平相匹配的语言风格
+3. 优化后的内容应该更加精准、吸引人
+4. 如果用户反馈涉及内容调整，请相应修改；如果涉及风格调整，请调整表达方式
+
+输出要求:
+你的输出**必须**是一个格式严格的JSON对象，不包含任何额外的解释。
+
+\`\`\`json
+{
+  "title": "优化后的课程标题",
+  "description": "优化后的课程描述"
+}
+\`\`\`
+`;
+
+  try {
+    const result = await generateObject({
+      model: defaultModel,
+      prompt,
+      schema: titleDescriptionSchema,
+      ...TITLE_DESCRIPTION_CONFIG,
+    });
+    return result.object;
+  } catch (error) {
+    console.error("AI refine error:", error);
+    throw new Error("优化失败，请稍后重试");
+  }
+}
+
+/**
  * 生成课程大纲
  */
 export async function generateCourseOutline({

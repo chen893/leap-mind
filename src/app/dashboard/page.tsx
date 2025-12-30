@@ -33,6 +33,11 @@ export default function DashboardPage() {
   // tRPC utils（必须在组件顶层调用）
   const utils = api.useUtils();
 
+  // 获取用户统计汇总数据
+  const { data: userStats } = api.course.getUserStats.useQuery(undefined, {
+    enabled: !!session,
+  });
+
   // 学习中的课程查询
   const {
     data: inProgressData,
@@ -110,8 +115,9 @@ export default function DashboardPage() {
   const handleDeleted = useCallback(() => {
     if (!courseToDelete) return;
 
-    // 使 getUserCourses 缓存失效，重新获取
+    // 使 getUserCourses 和 getUserStats 缓存失效，重新获取
     void utils.course.getUserCourses.invalidate();
+    void utils.course.getUserStats.invalidate();
 
     setCourseToDelete(null);
     setDeleteDialogOpen(false);
@@ -129,26 +135,6 @@ export default function DashboardPage() {
   const createdCourses = useMemo(() => {
     return createdData?.pages.flatMap((page) => page.courses) ?? [];
   }, [createdData]);
-
-  // 获取各分类的总数量（从第一页获取，totalCount 在每页都一样）
-  const inProgressTotalCount = inProgressData?.pages[0]?.totalCount ?? 0;
-  const completedTotalCount = completedData?.pages[0]?.totalCount ?? 0;
-  const createdTotalCount = createdData?.pages[0]?.totalCount ?? 0;
-
-  // 计算总体统计数据
-  const { totalChapters, completedChapters } = useMemo(() => {
-    const allCourses = [...inProgressCourses, ...completedCourses];
-    const total = allCourses.reduce((sum, p) => sum + p.stats.totalChapters, 0);
-    const completedTotal = allCourses.reduce(
-      (sum, p) => sum + p.stats.completedChapters,
-      0,
-    );
-
-    return {
-      totalChapters: total,
-      completedChapters: completedTotal,
-    };
-  }, [inProgressCourses, completedCourses]);
 
   if (!session) {
     return (
@@ -192,7 +178,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {inProgressTotalCount}
+                {userStats?.inProgressCount ?? 0}
               </div>
               <p className="text-muted-foreground text-xs">正在进行的课程</p>
             </CardContent>
@@ -205,7 +191,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {completedTotalCount}
+                {userStats?.completedCount ?? 0}
               </div>
               <p className="text-muted-foreground text-xs">学习完成的课程</p>
             </CardContent>
@@ -217,7 +203,7 @@ export default function DashboardPage() {
               <Plus className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{createdTotalCount}</div>
+              <div className="text-2xl font-bold">{userStats?.createdCount ?? 0}</div>
               <p className="text-muted-foreground text-xs">你创建的课程</p>
             </CardContent>
           </Card>
@@ -229,13 +215,10 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {totalChapters > 0
-                  ? Math.round((completedChapters / totalChapters) * 100)
-                  : 0}
-                %
+                {userStats?.progressPercentage ?? 0}%
               </div>
               <p className="text-muted-foreground text-xs">
-                {completedChapters}/{totalChapters} 章节
+                {userStats?.completedChapters ?? 0}/{userStats?.totalChapters ?? 0} 章节
               </p>
             </CardContent>
           </Card>
@@ -245,13 +228,13 @@ export default function DashboardPage() {
         <Tabs defaultValue="learning" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="learning">
-              学习中 ({inProgressTotalCount})
+              学习中 ({userStats?.inProgressCount ?? 0})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              已完成 ({completedTotalCount})
+              已完成 ({userStats?.completedCount ?? 0})
             </TabsTrigger>
             <TabsTrigger value="created">
-              我创建的 ({createdTotalCount})
+              我创建的 ({userStats?.createdCount ?? 0})
             </TabsTrigger>
           </TabsList>
 

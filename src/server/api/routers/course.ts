@@ -7,6 +7,7 @@ import {
 } from "@/server/api/trpc";
 import {
   generateTitleAndDescription,
+  refineTitleAndDescription,
   generateCourseOutline,
 } from "@/lib/course-ai";
 
@@ -22,6 +23,25 @@ export const courseRouter = createTRPCRouter({
     .mutation(async ({ input }) => {
       return await generateTitleAndDescription({
         userInput: input.userInput,
+        level: input.level,
+      });
+    }),
+
+  // 根据反馈优化课程标题和描述
+  refineTitleAndDescription: protectedProcedure
+    .input(
+      z.object({
+        currentTitle: z.string().min(1).max(200),
+        currentDescription: z.string().min(1).max(1000),
+        userFeedback: z.string().min(1).max(500),
+        level: z.enum(["beginner", "intermediate", "advanced"]),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      return await refineTitleAndDescription({
+        currentTitle: input.currentTitle,
+        currentDescription: input.currentDescription,
+        userFeedback: input.userFeedback,
         level: input.level,
       });
     }),
@@ -223,6 +243,71 @@ export const courseRouter = createTRPCRouter({
         totalCount,
       };
     }),
+
+  // 获取用户学习统计汇总
+  getUserStats: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id;
+
+    // 并行查询所有统计数据
+    const [
+      inProgressCount,
+      completedCount,
+      createdCount,
+      chapterStats,
+    ] = await Promise.all([
+      // 学习中课程数量
+      ctx.db.userCourseProgress.count({
+        where: { userId, status: "IN_PROGRESS" },
+      }),
+      // 已完成课程数量
+      ctx.db.userCourseProgress.count({
+        where: { userId, status: "COMPLETED" },
+      }),
+      // 创建的课程数量
+      ctx.db.course.count({
+        where: { creatorId: userId },
+      }),
+      // 章节统计：获取用户所有课程的总章节数和已完成章节数
+      ctx.db.userCourseProgress.findMany({
+        where: { userId },
+        select: {
+          course: {
+            select: {
+              _count: {
+                select: { chapters: true },
+              },
+            },
+          },
+          chapterProgresses: {
+            where: { status: "COMPLETED" },
+            select: { id: true },
+          },
+        },
+      }),
+    ]);
+
+    // 计算总章节数和已完成章节数
+    const totalChapters = chapterStats.reduce(
+      (sum, p) => sum + p.course._count.chapters,
+      0,
+    );
+    const completedChapters = chapterStats.reduce(
+      (sum, p) => sum + p.chapterProgresses.length,
+      0,
+    );
+
+    return {
+      inProgressCount,
+      completedCount,
+      createdCount,
+      totalChapters,
+      completedChapters,
+      progressPercentage:
+        totalChapters > 0
+          ? Math.round((completedChapters / totalChapters) * 100)
+          : 0,
+    };
+  }),
 
   // 获取单个课程详情
   getById: publicProcedure

@@ -130,6 +130,11 @@ export default function DashboardPage() {
     return createdData?.pages.flatMap((page) => page.courses) ?? [];
   }, [createdData]);
 
+  // 获取各分类的总数量（从第一页获取，totalCount 在每页都一样）
+  const inProgressTotalCount = inProgressData?.pages[0]?.totalCount ?? 0;
+  const completedTotalCount = completedData?.pages[0]?.totalCount ?? 0;
+  const createdTotalCount = createdData?.pages[0]?.totalCount ?? 0;
+
   // 计算总体统计数据
   const { totalChapters, completedChapters } = useMemo(() => {
     const allCourses = [...inProgressCourses, ...completedCourses];
@@ -187,7 +192,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {inProgressCourses.length}
+                {inProgressTotalCount}
               </div>
               <p className="text-muted-foreground text-xs">正在进行的课程</p>
             </CardContent>
@@ -200,7 +205,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {completedCourses.length}
+                {completedTotalCount}
               </div>
               <p className="text-muted-foreground text-xs">学习完成的课程</p>
             </CardContent>
@@ -212,7 +217,7 @@ export default function DashboardPage() {
               <Plus className="text-muted-foreground h-4 w-4" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{createdCourses.length}</div>
+              <div className="text-2xl font-bold">{createdTotalCount}</div>
               <p className="text-muted-foreground text-xs">你创建的课程</p>
             </CardContent>
           </Card>
@@ -240,13 +245,13 @@ export default function DashboardPage() {
         <Tabs defaultValue="learning" className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="learning">
-              学习中 ({inProgressCourses.length})
+              学习中 ({inProgressTotalCount})
             </TabsTrigger>
             <TabsTrigger value="completed">
-              已完成 ({completedCourses.length})
+              已完成 ({completedTotalCount})
             </TabsTrigger>
             <TabsTrigger value="created">
-              我创建的 ({createdCourses.length})
+              我创建的 ({createdTotalCount})
             </TabsTrigger>
           </TabsList>
 

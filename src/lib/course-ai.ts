@@ -87,17 +87,30 @@ export type BatchAnswerEvaluationResult = z.infer<
 /**
  * 生成课程标题和描述
  */
-export async function generateTitleAndDescription(
-  userInput: string,
-): Promise<TitleDescriptionResult> {
+export async function generateTitleAndDescription({
+  userInput,
+  level,
+}: {
+  userInput: string;
+  level: "beginner" | "intermediate" | "advanced";
+}): Promise<TitleDescriptionResult> {
+  const levelText = level === "beginner" ? "初学者/零基础" : level === "intermediate" ? "有一定基础" : "进阶/高级";
+  const levelHint = level === "beginner"
+    ? '标题应体现"入门"、"零基础"、"快速上手"等关键词，描述应强调无需前置知识、循序渐进的学习路径'
+    : level === "intermediate"
+      ? '标题应体现"进阶"、"提升"、"实战"等关键词，描述应强调在已有基础上的能力提升和实践应用'
+      : '标题应体现"精通"、"深入"、"高级"、"架构"等关键词，描述应强调深度理解、复杂场景处理和专业能力';
+
   const prompt = `
 角色: 你是一位经验丰富的在线课程设计师和教育内容策划专家。你擅长将用户模糊的学习想法转化为一个结构清晰、引人注目的课程概念。
 
 任务描述:
-你的任务是接收一段由用户提供的学习需求描述。这段描述可能很简洁，甚至只有一个关键词。你需要基于这个需求，提炼并创作出一个专业的课程标题（title）和一个详细、有吸引力的课程描述（description）。
+你的任务是接收一段由用户提供的学习需求描述，以及目标学习者的水平。这段描述可能很简洁，甚至只有一个关键词。你需要基于这个需求和学习者水平，提炼并创作出一个专业的课程标题（title）和一个详细、有吸引力的课程描述（description）。
 
-* 对于\`title\`: 标题应该精炼、专业，并能准确概括课程的核心内容，吸引目标学习者。例如，对于需求"学吉他"，一个好的标题是"零基础吉他弹唱快速入门"，而不是简单的"学习吉他"。
-* 对于\`description\`: 描述应该更加详细，以激发用户的学习兴趣。它需要阐明课程的学习目标、主要内容、适合人群，以及学习后能够掌握的关键技能。
+目标学习者水平: ${levelText}
+
+* 对于\`title\`: 标题应该精炼、专业，并能准确概括课程的核心内容，同时体现课程难度级别。${levelHint.split("，")[0]}。
+* 对于\`description\`: 描述应该更加详细，以激发用户的学习兴趣。它需要阐明课程的学习目标、主要内容、适合人群，以及学习后能够掌握的关键技能。${levelHint}。
 
 输出要求 (至关重要):
 你的输出**必须**是一个格式严格的JSON对象，不包含任何额外的解释、介绍性文字或Markdown标记。JSON结构必须如下：
@@ -111,9 +124,10 @@ export async function generateTitleAndDescription(
 
 ---
 
-请根据下面的用户需求，生成JSON输出。
+请根据下面的用户需求和学习者水平，生成JSON输出。
 
 用户需求: \`${userInput}\`
+学习者水平: ${levelText}
 `;
 
   try {
@@ -149,9 +163,9 @@ export async function generateCourseOutline({
 }: {
   title: string;
   description: string;
-  level: "beginner" | "intermediate";
+  level: "beginner" | "intermediate" | "advanced";
 }): Promise<OutlineResult> {
-  const levelText = level === "beginner" ? "初学者" : "有基础";
+  const levelText = level === "beginner" ? "初学者" : level === "intermediate" ? "有基础" : "进阶学习者";
 
   const prompt = `
 角色与目标：
@@ -217,9 +231,9 @@ export async function generateChapterQuestions({
   courseTitle: string;
   chapterTitle: string;
   chapterContent: string;
-  level: "beginner" | "intermediate";
+  level: "beginner" | "intermediate" | "advanced";
 }): Promise<ChapterQuestionsResult> {
-  const levelText = level === "beginner" ? "初学者" : "有基础";
+  const levelText = level === "beginner" ? "初学者" : level === "intermediate" ? "有基础" : "进阶学习者";
   // - questionType: 问题类型（${QuestionType.FILL_BLANK} 填空题, ${QuestionType.OPEN_ENDED} 开放式问题, ${QuestionType.MULTIPLE_CHOICE} 选择题, ${QuestionType.TRUE_FALSE} 判断题）
   const prompt = `
 角色设定：
@@ -292,9 +306,9 @@ export async function evaluateAnswersBatch({
     expectedAnswer?: string;
     evaluationCriteria: string;
   }>;
-  level: "beginner" | "intermediate";
+  level: "beginner" | "intermediate" | "advanced";
 }): Promise<BatchAnswerEvaluationResult> {
-  const levelText = level === "beginner" ? "初学者" : "有基础";
+  const levelText = level === "beginner" ? "初学者" : level === "intermediate" ? "有基础" : "进阶学习者";
 
   const questionsText = questionsAndAnswers
     .map(

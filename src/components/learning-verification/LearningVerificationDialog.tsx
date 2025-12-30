@@ -23,6 +23,9 @@ import {
   Target,
   X,
   XCircle,
+  Sparkles,
+  Brain,
+  Zap,
 } from "lucide-react";
 import { SocraticQuestion } from "./SocraticQuestion";
 import { AssessmentResultDialog } from "./AssessmentResultDialog";
@@ -258,20 +261,42 @@ export function LearningVerificationDialog({
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className="max-h-[90vh] overflow-y-auto"
+          className={cn(
+            "max-h-[90vh] overflow-y-auto",
+            "border-0 bg-gradient-to-b from-background to-muted/30",
+            "shadow-2xl shadow-primary/10",
+          )}
           style={{ maxWidth: "80vw" }}
         >
-          <DialogHeader>
-            <div className="flex shrink-0 items-center justify-between border-b bg-white">
-              <div className="flex items-center space-x-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-100">
-                  <BookOpen className="h-4 w-4 text-blue-600" />
+          {/* 背景装饰 */}
+          <div className="pointer-events-none absolute inset-0 overflow-hidden rounded-lg">
+            <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-gradient-to-br from-primary/20 to-brand-accent/20 blur-3xl" />
+            <div className="absolute -bottom-24 -left-24 h-48 w-48 rounded-full bg-gradient-to-tr from-brand-accent/15 to-primary/15 blur-3xl" />
+          </div>
+
+          <DialogHeader className="relative">
+            <div className="flex shrink-0 items-center justify-between border-b border-border/50 bg-background/80 pb-4 backdrop-blur-sm">
+              <div className="flex items-center gap-4">
+                {/* 图标容器 */}
+                <div
+                  className={cn(
+                    "relative flex h-12 w-12 items-center justify-center rounded-xl",
+                    "bg-gradient-to-br from-primary to-primary/80",
+                    "shadow-lg shadow-primary/30",
+                    "ring-4 ring-primary/10",
+                  )}
+                >
+                  <Brain className="h-6 w-6 text-primary-foreground" />
+                  {/* 装饰光点 */}
+                  <div className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-brand-accent animate-pulse" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    学习验证
+
+                <div className="space-y-1">
+                  <h2 className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground">
+                    <span>学习验证</span>
+                    <Sparkles className="h-4 w-4 text-brand-accent" />
                   </h2>
-                  <p className="text-sm text-gray-500">{chapterTitle}</p>
+                  <p className="text-sm text-muted-foreground">{chapterTitle}</p>
                 </div>
               </div>
             </div>
@@ -279,54 +304,59 @@ export function LearningVerificationDialog({
 
           {/* 固定顶部标题栏 */}
 
-          <div className="flex flex-1 flex-col">
+          <div className="relative flex flex-1 flex-col">
             <>
               <div className="space-y-6 p-6">
                 {isLoading ? (
-                  <div className="flex flex-col items-center justify-center space-y-4 py-20">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50">
-                      <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+                  <div className="flex flex-col items-center justify-center space-y-6 py-20">
+                    {/* 加载动画 */}
+                    <div className="relative">
+                      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-brand-accent/20">
+                        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      </div>
+                      {/* 脉冲环 */}
+                      <div className="absolute inset-0 animate-ping rounded-2xl bg-primary/10" style={{ animationDuration: "1.5s" }} />
                     </div>
                     <div className="space-y-2 text-center">
-                      <h3 className="text-base font-medium text-gray-900">
+                      <h3 className="text-lg font-semibold text-foreground">
                         正在加载问题...
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         请稍候，我们正在为您准备学习内容
                       </p>
                     </div>
                   </div>
                 ) : error ? (
-                  <div className="flex flex-col items-center justify-center space-y-4 py-20">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-50">
-                      <XCircle className="h-6 w-6 text-red-600" />
+                  <div className="flex flex-col items-center justify-center space-y-6 py-20">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-destructive/10">
+                      <XCircle className="h-10 w-10 text-destructive" />
                     </div>
                     <div className="space-y-3 text-center">
-                      <h3 className="text-base font-medium text-gray-900">
+                      <h3 className="text-lg font-semibold text-foreground">
                         加载失败
                       </h3>
-                      <p className="max-w-md text-sm text-red-600">{error}</p>
+                      <p className="max-w-md text-sm text-destructive">{error}</p>
                       <Button
                         onClick={() => window.location.reload()}
                         variant="outline"
                         size="sm"
-                        className="mt-3"
+                        className="mt-3 gap-2"
                       >
-                        <RotateCcw className="mr-2 h-4 w-4" />
+                        <RotateCcw className="h-4 w-4" />
                         重新加载
                       </Button>
                     </div>
                   </div>
                 ) : currentQuestions.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center space-y-4 py-20">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-50">
-                      <BookOpen className="h-6 w-6 text-gray-600" />
+                  <div className="flex flex-col items-center justify-center space-y-6 py-20">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-muted">
+                      <BookOpen className="h-10 w-10 text-muted-foreground" />
                     </div>
                     <div className="space-y-2 text-center">
-                      <h3 className="text-base font-medium text-gray-900">
+                      <h3 className="text-lg font-semibold text-foreground">
                         暂无问题
                       </h3>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-muted-foreground">
                         当前章节还没有配置学习验证问题
                       </p>
                     </div>
@@ -336,10 +366,17 @@ export function LearningVerificationDialog({
                     {currentQuestion && (
                       <div className="space-y-4">
                         {/* 问题导航栏 - 固定在顶部 */}
-                        <div className="sticky top-0 z-10 rounded-xl border border-gray-200 bg-white/95 p-4 shadow-sm backdrop-blur-sm">
-                          <div className="flex items-center justify-between">
+                        <div
+                          className={cn(
+                            "sticky top-0 z-10 rounded-xl p-4",
+                            "bg-card/95 backdrop-blur-md",
+                            "border border-border/50",
+                            "shadow-sm",
+                          )}
+                        >
+                          <div className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-gray-600">
+                              <span className="text-sm font-medium text-muted-foreground">
                                 问题进度:
                               </span>
                               <div className="flex flex-wrap gap-2">
@@ -359,41 +396,42 @@ export function LearningVerificationDialog({
                                       size="sm"
                                       onClick={() => goToQuestion(index)}
                                       className={cn(
-                                        "relative h-8 w-8 rounded-lg border p-0 transition-all duration-200 hover:scale-105",
+                                        "relative h-9 w-9 rounded-lg p-0 transition-all duration-200",
+                                        "hover:scale-105 active:scale-95",
                                         isCurrent &&
-                                          "border-blue-600 bg-blue-600 text-white shadow-sm",
+                                          "bg-primary text-primary-foreground shadow-md shadow-primary/30 ring-2 ring-primary/20",
                                         hasValidAnswer &&
                                           isCorrect &&
                                           !isCurrent &&
-                                          "border-green-200 bg-green-50 text-green-700 hover:bg-green-100",
+                                          "bg-green-500/10 text-green-700 ring-1 ring-green-500/30 hover:bg-green-500/20 dark:text-green-400",
                                         hasValidAnswer &&
                                           isCorrect === false &&
                                           !isCurrent &&
-                                          "border-red-200 bg-red-50 text-red-700 hover:bg-red-100",
+                                          "bg-destructive/10 text-destructive ring-1 ring-destructive/30 hover:bg-destructive/20",
                                         hasValidAnswer &&
                                           isCorrect === null &&
                                           !isCurrent &&
-                                          "border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100",
+                                          "bg-primary/10 text-primary ring-1 ring-primary/30 hover:bg-primary/20",
                                         !hasValidAnswer &&
                                           !isCurrent &&
-                                          "border-gray-200 bg-white text-gray-500 hover:bg-gray-50",
+                                          "bg-muted text-muted-foreground ring-1 ring-border hover:bg-muted/80",
                                       )}
                                     >
-                                      <span className="text-xs font-medium">
+                                      <span className="text-xs font-semibold">
                                         {index + 1}
                                       </span>
                                       {hasValidAnswer && (
                                         <div className="absolute -top-1 -right-1">
                                           {isCorrect ? (
-                                            <div className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-green-500">
-                                              <CheckCircle className="h-1.5 w-1.5 text-white" />
+                                            <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-green-500 shadow-sm">
+                                              <CheckCircle className="h-2 w-2 text-white" />
                                             </div>
                                           ) : isCorrect === false ? (
-                                            <div className="flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500">
-                                              <X className="h-1.5 w-1.5 text-white" />
+                                            <div className="flex h-3.5 w-3.5 items-center justify-center rounded-full bg-destructive shadow-sm">
+                                              <X className="h-2 w-2 text-white" />
                                             </div>
                                           ) : (
-                                            <div className="h-2.5 w-2.5 rounded-full bg-blue-500" />
+                                            <div className="h-3 w-3 rounded-full bg-primary shadow-sm ring-2 ring-background" />
                                           )}
                                         </div>
                                       )}
@@ -407,18 +445,25 @@ export function LearningVerificationDialog({
                             <Button
                               onClick={handleEvaluateAll}
                               disabled={!selectors.allAnswered || isEvaluating}
-                              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 disabled:from-gray-400 disabled:to-gray-500"
+                              className={cn(
+                                "gap-2 px-5",
+                                "bg-gradient-to-r from-primary to-primary/90",
+                                "shadow-md shadow-primary/25",
+                                "transition-all duration-300",
+                                "hover:shadow-lg hover:shadow-primary/30",
+                                "disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:shadow-none",
+                              )}
                               size="sm"
                             >
                               {isEvaluating ? (
                                 <>
-                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                  AI评估中...
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                  <span>AI评估中...</span>
                                 </>
                               ) : (
                                 <>
-                                  <Target className="mr-2 h-4 w-4" />
-                                  获取AI评估
+                                  <Zap className="h-4 w-4" />
+                                  <span>获取AI评估</span>
                                 </>
                               )}
                             </Button>
@@ -428,7 +473,12 @@ export function LearningVerificationDialog({
                         {/* 问题内容区域 */}
                         <div
                           style={{ minWidth: "50vw" }}
-                          className="rounded-xl border border-gray-200 bg-white"
+                          className={cn(
+                            "rounded-xl",
+                            "bg-card",
+                            "border border-border/50",
+                            "shadow-sm",
+                          )}
                         >
                           <SocraticQuestion
                             question={currentQuestion}
@@ -469,29 +519,54 @@ export function LearningVerificationDialog({
 
       {/* 退出确认对话框 */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent className="sm:max-w-md">
+        <AlertDialogContent
+          className={cn(
+            "sm:max-w-md",
+            "border-0 bg-gradient-to-b from-background to-muted/30",
+            "shadow-2xl",
+          )}
+        >
           <AlertDialogHeader className="space-y-4 text-center">
             <div className="flex justify-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
-                <Home className="h-8 w-8 text-orange-600" />
+              <div
+                className={cn(
+                  "flex h-20 w-20 items-center justify-center rounded-2xl",
+                  "bg-gradient-to-br from-brand-accent/20 to-brand-accent/10",
+                  "ring-4 ring-brand-accent/10",
+                )}
+              >
+                <Home className="h-10 w-10 text-brand-accent-foreground" />
               </div>
             </div>
-            <AlertDialogTitle className="text-xl font-semibold text-gray-900">
+            <AlertDialogTitle className="text-xl font-bold text-foreground">
               确认退出学习验证
             </AlertDialogTitle>
-            <AlertDialogDescription className="leading-relaxed text-gray-600">
+            <AlertDialogDescription className="leading-relaxed text-muted-foreground">
               您的答题进度将会自动保存，下次打开时可以继续作答。确定要退出吗？
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="flex flex-col gap-3 pt-6 sm:flex-row">
-            <AlertDialogCancel className="flex-1 border-2 transition-all duration-200 hover:bg-gray-50">
+            <AlertDialogCancel
+              className={cn(
+                "flex-1",
+                "border-2 border-border",
+                "transition-all duration-200",
+                "hover:bg-muted",
+              )}
+            >
               继续学习
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmExit}
-              className="flex-1 bg-orange-600 text-white transition-all duration-200 hover:bg-orange-700"
+              className={cn(
+                "flex-1 gap-2",
+                "bg-brand-accent text-brand-accent-foreground",
+                "shadow-md shadow-brand-accent/25",
+                "transition-all duration-200",
+                "hover:bg-brand-accent/90",
+              )}
             >
-              <Home className="mr-2 h-4 w-4" />
+              <Home className="h-4 w-4" />
               确定退出
             </AlertDialogAction>
           </AlertDialogFooter>

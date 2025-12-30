@@ -16,10 +16,14 @@ export const courseRouter = createTRPCRouter({
     .input(
       z.object({
         userInput: z.string().min(1).max(1000),
+        level: z.enum(["beginner", "intermediate", "advanced"]),
       }),
     )
     .mutation(async ({ input }) => {
-      return await generateTitleAndDescription(input.userInput);
+      return await generateTitleAndDescription({
+        userInput: input.userInput,
+        level: input.level,
+      });
     }),
 
   // 创建课程大纲
@@ -28,7 +32,7 @@ export const courseRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1).max(200),
         description: z.string().min(1).max(1000),
-        level: z.enum(["beginner", "intermediate"]),
+        level: z.enum(["beginner", "intermediate", "advanced"]),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -147,39 +151,45 @@ export const courseRouter = createTRPCRouter({
         };
       }
 
-      const progresses = await ctx.db.userCourseProgress.findMany({
-        where: whereCondition,
-        include: {
-          course: {
-            include: {
-              creator: {
-                select: {
-                  id: true,
-                  name: true,
-                  image: true,
+      // 并行查询：获取总数量和分页数据
+      const [totalCount, progresses] = await Promise.all([
+        ctx.db.userCourseProgress.count({
+          where: whereCondition,
+        }),
+        ctx.db.userCourseProgress.findMany({
+          where: whereCondition,
+          include: {
+            course: {
+              include: {
+                creator: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  },
                 },
-              },
-              _count: {
-                select: {
-                  chapters: true,
+                _count: {
+                  select: {
+                    chapters: true,
+                  },
                 },
               },
             },
-          },
-          chapterProgresses: {
-            select: {
-              chapterId: true,
-              status: true,
+            chapterProgresses: {
+              select: {
+                chapterId: true,
+                status: true,
+              },
             },
           },
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
-        take: limit + 1,
-        skip: cursor ? 1 : 0,
-        cursor: cursor ? { id: cursor } : undefined,
-      });
+          orderBy: {
+            updatedAt: "desc",
+          },
+          take: limit + 1,
+          skip: cursor ? 1 : 0,
+          cursor: cursor ? { id: cursor } : undefined,
+        }),
+      ]);
 
       let nextCursor: typeof cursor | undefined = undefined;
       if (progresses.length > limit) {
@@ -210,6 +220,7 @@ export const courseRouter = createTRPCRouter({
       return {
         courses: progressesWithStats,
         nextCursor,
+        totalCount,
       };
     }),
 

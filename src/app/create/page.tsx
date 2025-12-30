@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/use-toast";
+import { cn } from "@/lib/utils";
 import { api } from "@/trpc/react";
 import {
   ArrowRight,
@@ -37,7 +38,7 @@ export default function CreateCoursePage() {
   const [userInput, setUserInput] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [level, setLevel] = useState<"beginner" | "intermediate">("beginner");
+  const [level, setLevel] = useState<"beginner" | "intermediate" | "advanced">("beginner");
   const [isCreating, setIsCreating] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -99,6 +100,7 @@ export default function CreateCoursePage() {
     try {
       const result = await generateTitleAndDescriptionMutation.mutateAsync({
         userInput: userInput.trim(),
+        level: level,
       });
       setTitle(result.title);
       setDescription(result.description);
@@ -221,24 +223,123 @@ export default function CreateCoursePage() {
                       className="resize-none rounded-xl border-2 border-border bg-background/70 p-4 text-base shadow-sm backdrop-blur transition-all duration-300 group-hover:border-border/80 focus:border-brand focus:ring-4 focus:ring-brand/20"
                     />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      💡 描述越具体，AI生成的课程越符合你的需求
-                    </p>
-                    <EnhancedButton
-                      type="button"
-                      buttonId="generate-title-desc"
-                      onAsyncClick={generateTitleAndDescription}
-                      disabled={!userInput.trim()}
-                      variant="outline"
-                      size="sm"
-                      className="h-9 rounded-lg border-brand/30 px-4 text-brand hover:border-brand/40 hover:bg-brand/10"
-                      loadingText="生成中..."
-                    >
-                      <Sparkles className="mr-2 h-4 w-4" />
-                      AI生成
-                    </EnhancedButton>
-                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    💡 描述越具体，AI生成的课程越符合你的需求
+                  </p>
+                </div>
+
+                {/* 难度级别 */}
+                <div className="group space-y-3">
+                  <label
+                    htmlFor="level"
+                    className="flex items-center gap-2 text-sm font-semibold text-foreground"
+                  >
+                    <div className="h-2 w-2 rounded-full bg-brand-accent"></div>
+                    难度级别
+                  </label>
+                  <Select
+                    value={level}
+                    onValueChange={(value: "beginner" | "intermediate" | "advanced") =>
+                      setLevel(value)
+                    }
+                  >
+                    <SelectTrigger className="h-auto min-h-[3rem] w-full rounded-xl border-2 border-border bg-background/70 px-4 py-3 text-base shadow-sm backdrop-blur transition-all duration-300 hover:border-border/80 focus:border-brand focus:ring-4 focus:ring-brand/20">
+                      <SelectValue>
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={cn(
+                              "h-2.5 w-2.5 shrink-0 rounded-full",
+                              level === "beginner"
+                                ? "bg-green-500"
+                                : level === "intermediate"
+                                  ? "bg-amber-500"
+                                  : "bg-red-500"
+                            )}
+                          />
+                          <div className="flex flex-col items-start gap-0.5">
+                            <span className="font-medium leading-tight">
+                              {level === "beginner" ? "初级" : level === "intermediate" ? "中级" : "高级"}
+                            </span>
+                            <span className="text-xs text-muted-foreground leading-tight">
+                              {level === "beginner" ? "适合零基础学习者" : level === "intermediate" ? "需要一定基础知识" : "适合有扎实基础的学习者"}
+                            </span>
+                          </div>
+                        </div>
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl border-border/60 bg-popover p-1.5 shadow-2xl">
+                      <SelectItem
+                        value="beginner"
+                        className="cursor-pointer rounded-lg px-3 py-3 transition-colors hover:bg-accent focus:bg-accent"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
+                            <div className="h-2.5 w-2.5 rounded-full bg-green-500" />
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-foreground">
+                              初级
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              适合零基础学习者
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem
+                        value="intermediate"
+                        className="cursor-pointer rounded-lg px-3 py-3 transition-colors hover:bg-accent focus:bg-accent"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-500/10">
+                            <div className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-foreground">
+                              中级
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              需要一定基础知识
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem
+                        value="advanced"
+                        className="cursor-pointer rounded-lg px-3 py-3 transition-colors hover:bg-accent focus:bg-accent"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-red-500/10">
+                            <div className="h-2.5 w-2.5 rounded-full bg-red-500" />
+                          </div>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="font-semibold text-foreground">
+                              高级
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              适合有扎实基础的学习者
+                            </span>
+                          </div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* AI 生成按钮 */}
+                <div className="flex justify-center">
+                  <EnhancedButton
+                    type="button"
+                    buttonId="generate-title-desc"
+                    onAsyncClick={generateTitleAndDescription}
+                    disabled={!userInput.trim()}
+                    variant="outline"
+                    className="h-12 rounded-xl border-2 border-brand/30 px-8 text-brand hover:border-brand/50 hover:bg-brand/10"
+                    loadingText="AI 正在生成..."
+                  >
+                    <Sparkles className="mr-2 h-5 w-5" />
+                    AI 智能生成课程信息
+                  </EnhancedButton>
                 </div>
 
                 {/* 生成结果预览区域 */}
@@ -291,57 +392,6 @@ export default function CreateCoursePage() {
                     </p>
                   </div>
                 )}
-
-                {/* 难度级别 */}
-                <div className="group space-y-3">
-                  <label
-                    htmlFor="level"
-                    className="flex items-center gap-2 text-sm font-semibold text-foreground"
-                  >
-                    <div className="h-2 w-2 rounded-full bg-brand-accent"></div>
-                    难度级别
-                  </label>
-                  <Select
-                    value={level}
-                    onValueChange={(value: "beginner" | "intermediate") =>
-                      setLevel(value)
-                    }
-                  >
-                    <SelectTrigger className="h-12 rounded-xl border-2 border-border bg-background/70 text-base shadow-sm backdrop-blur transition-all duration-300 hover:border-border/80 focus:border-brand focus:ring-4 focus:ring-brand/20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-border/60 bg-popover shadow-2xl">
-                      <SelectItem
-                        value="beginner"
-                        className="rounded-lg py-3 text-base"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                          <div>
-                            <div className="font-medium">初级</div>
-                            <div className="text-sm text-gray-500">
-                              适合零基础学习者
-                            </div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                      <SelectItem
-                        value="intermediate"
-                        className="rounded-lg py-3 text-base"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="h-3 w-3 rounded-full bg-orange-500"></div>
-                          <div>
-                            <div className="font-medium">中级</div>
-                            <div className="text-sm text-muted-foreground">
-                              需要一定基础知识
-                            </div>
-                          </div>
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
 
                 {/* 提交按钮 */}
                 <div className="pt-4">

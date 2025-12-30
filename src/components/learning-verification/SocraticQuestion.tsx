@@ -30,16 +30,28 @@ import {
   ArrowLeft,
   ArrowRight,
   RotateCcw,
+  MessageSquare,
+  Sparkles,
+  PenLine,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Difficulty } from "@/types/api";
 import { QuestionCategory } from "@prisma/client";
 import type { SocraticQuestionProps } from "@/types/components";
 
-const difficultyColors: Record<Difficulty, string> = {
-  EASY: "bg-green-100 text-green-800 border-green-200",
-  MEDIUM: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  HARD: "bg-red-100 text-red-800 border-red-200",
+const difficultyConfig: Record<Difficulty, { label: string; className: string }> = {
+  EASY: {
+    label: "简单",
+    className: "bg-green-500/10 text-green-700 dark:text-green-400 ring-1 ring-green-500/30",
+  },
+  MEDIUM: {
+    label: "中等",
+    className: "bg-brand-accent/10 text-brand-accent-foreground ring-1 ring-brand-accent/30",
+  },
+  HARD: {
+    label: "困难",
+    className: "bg-destructive/10 text-destructive ring-1 ring-destructive/30",
+  },
 };
 
 const typeLabels: Record<QuestionCategory, string> = {
@@ -48,12 +60,6 @@ const typeLabels: Record<QuestionCategory, string> = {
   [QuestionCategory.ANALYTICAL]: "分析性",
   [QuestionCategory.CREATIVE]: "创造性",
   [QuestionCategory.PRACTICAL]: "实践性",
-};
-
-const difficultyLabels: Record<Difficulty, string> = {
-  EASY: "简单",
-  MEDIUM: "中等",
-  HARD: "困难",
 };
 
 export function SocraticQuestion({
@@ -70,37 +76,51 @@ export function SocraticQuestion({
 }: SocraticQuestionProps) {
   const hasAnswer = answer.trim().length >= 10;
   const evaluation = question.userAnswers[0];
+  const difficulty = difficultyConfig[question?.difficulty ?? "EASY"];
 
   return (
     <div className="max-h-[70vh] min-w-[50vw] space-y-6 overflow-auto p-6">
       {/* 问题卡片 */}
-      <Card className="border-0 shadow-none">
-        <CardHeader className="space-y-4">
+      <Card className="border-0 bg-transparent shadow-none">
+        <CardHeader className="space-y-5 px-0 pt-0">
+          {/* 标题和标签 */}
           <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">深度思考问题</CardTitle>
+            <CardTitle className="flex items-center gap-2.5 text-xl font-bold tracking-tight text-foreground">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              深度思考问题
+            </CardTitle>
             <div className="flex items-center gap-2">
               <Badge
                 variant="outline"
-                className={cn(
-                  "text-xs",
-                  difficultyColors[question?.difficulty ?? "EASY"],
-                )}
+                className={cn("text-xs font-medium border-0", difficulty.className)}
               >
-                {difficultyLabels[question?.difficulty || "EASY"]}
+                {difficulty.label}
               </Badge>
-              <Badge variant="secondary" className="text-xs">
+              <Badge
+                variant="secondary"
+                className="text-xs font-medium bg-primary/10 text-primary ring-1 ring-primary/20"
+              >
                 {typeLabels[question?.questionCategory || "SOCRATIC"]}
               </Badge>
             </div>
           </div>
 
-          <div className="text-foreground text-lg leading-relaxed">
-            {question.questionText}
+          {/* 问题文本 */}
+          <div
+            className={cn(
+              "rounded-xl p-5",
+              "bg-gradient-to-br from-muted/50 to-muted/30",
+              "border border-border/50",
+            )}
+          >
+            <p className="text-lg leading-relaxed text-foreground">
+              {question.questionText}
+            </p>
           </div>
 
           {/* 提示按钮 */}
           {question.hints && question?.hints?.length > 0 && (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -108,9 +128,14 @@ export function SocraticQuestion({
                       variant="outline"
                       size="sm"
                       onClick={onToggleHints}
-                      className="text-xs"
+                      className={cn(
+                        "gap-2 transition-all duration-200",
+                        showHints
+                          ? "bg-brand-accent/10 text-brand-accent-foreground border-brand-accent/30"
+                          : "hover:bg-brand-accent/10 hover:text-brand-accent-foreground hover:border-brand-accent/30",
+                      )}
                     >
-                      <Lightbulb className="mr-1 h-4 w-4" />
+                      <Lightbulb className={cn("h-4 w-4", showHints && "text-brand-accent")} />
                       {showHints ? "隐藏提示" : "显示提示"}
                     </Button>
                   </TooltipTrigger>
@@ -121,7 +146,7 @@ export function SocraticQuestion({
               </TooltipProvider>
 
               {retryCount > 0 && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-xs border-primary/30 text-primary">
                   第 {retryCount + 1} 次尝试
                 </Badge>
               )}
@@ -130,150 +155,184 @@ export function SocraticQuestion({
 
           {/* 提示内容 */}
           {showHints && question.hints && (
-            <Card className="border-blue-200 bg-blue-50">
-              <CardContent className="pt-4">
-                <div className="flex items-start gap-2">
-                  <HelpCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-blue-600" />
-                  <div className="space-y-2">
-                    <h4 className="font-medium text-blue-900">思考提示：</h4>
-                    <ul className="space-y-1 text-sm text-blue-800">
-                      {question.hints.map((hint, index) => (
-                        <li key={index} className="flex items-start gap-2">
-                          <span className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-blue-600" />
-                          {hint}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
+            <div
+              className={cn(
+                "rounded-xl p-5",
+                "bg-gradient-to-br from-primary/5 to-brand-accent/5",
+                "border border-primary/20",
+              )}
+            >
+              <div className="flex items-start gap-3">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <Lightbulb className="h-4 w-4 text-primary" />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-primary">思考提示</h4>
+                  <ul className="space-y-2">
+                    {question.hints.map((hint, index) => (
+                      <li key={index} className="flex items-start gap-2.5 text-sm text-foreground/80">
+                        <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary/60" />
+                        <span>{hint}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
           )}
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-5 px-0">
           {/* 答案输入区域 */}
-          <div className="space-y-2">
-            <label className="text-foreground text-sm font-medium">
-              请详细阐述您的想法：
+          <div className="space-y-3">
+            <label className="flex items-center gap-2 text-sm font-semibold text-foreground">
+              <PenLine className="h-4 w-4 text-primary" />
+              请详细阐述您的想法
             </label>
             <Textarea
               value={answer}
               onChange={(e) => onAnswerChange(e.target.value)}
               placeholder="请深入思考并详细回答这个问题。建议至少写50字以上，展示您的思考过程..."
               className={cn(
-                "min-h-[120px] w-full resize-none transition-all duration-200",
+                "min-h-[140px] w-full resize-none transition-all duration-200",
+                "bg-background",
+                "border-border/50 focus:border-primary/50",
+                "placeholder:text-muted-foreground/60",
                 evaluation &&
                   evaluation.isCorrect &&
-                  "border-green-300 bg-green-50",
+                  "border-green-500/50 bg-green-500/5 focus:border-green-500/50",
                 evaluation &&
                   evaluation.isCorrect === false &&
-                  "border-red-300 bg-red-50",
+                  "border-destructive/50 bg-destructive/5 focus:border-destructive/50",
               )}
             />
-            <div className="text-muted-foreground flex items-center justify-between text-xs">
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>最少10个字符</span>
-              <span>{answer.length} 字符</span>
+              <span
+                className={cn(
+                  "tabular-nums transition-colors",
+                  hasAnswer && "text-primary font-medium",
+                )}
+              >
+                {answer.length} 字符
+              </span>
             </div>
           </div>
 
           {/* 评估结果显示区域 */}
           {evaluation && (
-            <Card
+            <div
               className={cn(
-                "animate-in slide-in-from-top-2 border-l-4 transition-all duration-300",
+                "rounded-xl overflow-hidden",
+                "border-l-4 transition-all duration-300",
+                "animate-in slide-in-from-top-2",
                 evaluation.isCorrect
-                  ? "border-l-green-500 bg-green-50"
-                  : "border-l-red-500 bg-red-50",
+                  ? "border-l-green-500 bg-green-500/5"
+                  : "border-l-destructive bg-destructive/5",
               )}
             >
-              <CardContent className="pt-4">
-                <div className="space-y-3">
-                  {/* 评估结果头部 */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {evaluation.isCorrect ? (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
-                      ) : (
-                        <XCircle className="h-5 w-5 text-red-600" />
-                      )}
-                      <span
-                        className={cn(
-                          "text-sm font-medium",
-                          evaluation.isCorrect
-                            ? "text-green-800"
-                            : "text-red-800",
-                        )}
-                      >
-                        {evaluation.isCorrect ? "回答正确" : "需要改进"}
-                      </span>
-                    </div>
-                    <Badge
-                      variant={evaluation.isCorrect ? "default" : "destructive"}
-                    >
-                      {evaluation.aiScore ?? 0} 分
-                    </Badge>
-                  </div>
-
-                  {/* AI 反馈 */}
-                  {evaluation.aiFeedback && (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-1 w-1 rounded-full bg-blue-500" />
-                        <span className="text-xs font-medium text-gray-600">
-                          AI 反馈
-                        </span>
+              <div className="p-5 space-y-4">
+                {/* 评估结果头部 */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    {evaluation.isCorrect ? (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
                       </div>
-                      <p className="pl-3 text-sm leading-relaxed text-gray-700">
-                        {evaluation.aiFeedback}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* 改进建议 */}
-                  {evaluation.aiSuggestions &&
-                    evaluation.aiSuggestions?.length > 0 && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <div className="h-1 w-1 rounded-full bg-blue-500" />
-                          <span className="text-xs font-medium text-gray-600">
-                            改进建议
-                          </span>
-                        </div>
-                        <ul className="space-y-1 pl-3">
-                          {evaluation.aiSuggestions.map((suggestion, index) => (
-                            <li
-                              key={index}
-                              className="flex items-start gap-2 text-sm text-gray-700"
-                            >
-                              <span className="mt-1 text-xs text-blue-500">
-                                •
-                              </span>
-                              <span>{suggestion}</span>
-                            </li>
-                          ))}
-                        </ul>
+                    ) : (
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10">
+                        <XCircle className="h-5 w-5 text-destructive" />
                       </div>
                     )}
+                    <span
+                      className={cn(
+                        "text-sm font-semibold",
+                        evaluation.isCorrect
+                          ? "text-green-700 dark:text-green-400"
+                          : "text-destructive",
+                      )}
+                    >
+                      {evaluation.isCorrect ? "回答正确" : "需要改进"}
+                    </span>
+                  </div>
+                  <Badge
+                    className={cn(
+                      "text-sm font-bold tabular-nums",
+                      evaluation.isCorrect
+                        ? "bg-green-500/10 text-green-700 dark:text-green-400"
+                        : "bg-destructive/10 text-destructive",
+                    )}
+                  >
+                    {evaluation.aiScore ?? 0} 分
+                  </Badge>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* AI 反馈 */}
+                {evaluation.aiFeedback && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      <span>AI 反馈</span>
+                    </div>
+                    <p className="text-sm leading-relaxed text-foreground/80 pl-5">
+                      {evaluation.aiFeedback}
+                    </p>
+                  </div>
+                )}
+
+                {/* 改进建议 */}
+                {evaluation.aiSuggestions &&
+                  evaluation.aiSuggestions?.length > 0 && (
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                        <Lightbulb className="h-3.5 w-3.5 text-brand-accent" />
+                        <span>改进建议</span>
+                      </div>
+                      <ul className="space-y-1.5 pl-5">
+                        {evaluation.aiSuggestions.map((suggestion, index) => (
+                          <li
+                            key={index}
+                            className="flex items-start gap-2 text-sm text-foreground/80"
+                          >
+                            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-accent" />
+                            <span>{suggestion}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+              </div>
+            </div>
           )}
 
-          {/* 操作按钮 - 优化布局 */}
-          <div className="flex flex-col gap-4 pt-6 sm:flex-row sm:items-center sm:justify-between">
+          {/* 操作按钮 */}
+          <div className="flex flex-col gap-4 pt-4 sm:flex-row sm:items-center sm:justify-between">
             {/* 左侧：导航按钮 */}
             <div className="flex items-center gap-2">
               {onPrevious && questionIndex > 0 && (
-                <Button variant="outline" onClick={onPrevious} size="sm">
-                  <ArrowLeft className="mr-1 h-4 w-4" />
+                <Button
+                  variant="outline"
+                  onClick={onPrevious}
+                  size="sm"
+                  className="gap-1.5 border-border/50 hover:bg-muted/50"
+                >
+                  <ArrowLeft className="h-4 w-4" />
                   上一题
                 </Button>
               )}
               {onNext && questionIndex < totalQuestions - 1 && (
-                <Button variant="default" onClick={onNext} size="sm">
+                <Button
+                  onClick={onNext}
+                  size="sm"
+                  className={cn(
+                    "gap-1.5",
+                    "bg-primary text-primary-foreground",
+                    "shadow-sm shadow-primary/25",
+                    "hover:shadow-md hover:shadow-primary/30",
+                  )}
+                >
                   下一题
-                  <ArrowRight className="ml-1 h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -282,7 +341,14 @@ export function SocraticQuestion({
             <div className="flex items-center gap-3">
               {/* 答案状态指示 */}
               {hasAnswer && !evaluation && (
-                <div className="flex items-center gap-2 rounded-full bg-green-50 px-3 py-1 text-sm text-green-700">
+                <div
+                  className={cn(
+                    "flex items-center gap-2 rounded-full px-3.5 py-1.5",
+                    "bg-green-500/10 text-green-700 dark:text-green-400",
+                    "text-sm font-medium",
+                    "ring-1 ring-green-500/30",
+                  )}
+                >
                   <CheckCircle className="h-4 w-4" />
                   <span>已填写</span>
                 </div>
@@ -292,10 +358,12 @@ export function SocraticQuestion({
               {evaluation && (
                 <div
                   className={cn(
-                    "flex items-center gap-2 rounded-full px-3 py-1 text-sm",
+                    "flex items-center gap-2 rounded-full px-3.5 py-1.5",
+                    "text-sm font-medium",
+                    "ring-1",
                     evaluation.isCorrect
-                      ? "bg-green-50 text-green-700"
-                      : "bg-orange-50 text-orange-700",
+                      ? "bg-green-500/10 text-green-700 dark:text-green-400 ring-green-500/30"
+                      : "bg-brand-accent/10 text-brand-accent-foreground ring-brand-accent/30",
                   )}
                 >
                   {evaluation.isCorrect ? (

@@ -52,5 +52,6 @@ export interface CourseCardProps {
     progressPercentage: number;
   };
   showProgress?: boolean;
+  viewMode?: "grid" | "list";
   onDeleteClick?: (course: { id: string; title: string; chapters: { id: string; title: string }[] }) => void;
 }

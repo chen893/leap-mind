@@ -11,118 +11,211 @@
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
+/*
+ * Leap Mind — Editorial Knowledge Theme
+ *
+ * Design Philosophy:
+ * - Forest Ink: Deep, intellectual green as primary
+ * - Amber Gold: Warm accent like gilded book edges
+ * - Warm neutrals: Paper-like warmth, not cold grays
+ *
+ * Inspired by: High-end academic journals, vintage libraries,
+ * refined editorial design, and the tactile warmth of printed matter.
+ */
+
 :root {
-  --radius: 0.75rem;
+  --radius: 0.625rem;
 
-  /* Brand */
-  --brand: oklch(0.55 0.22 265);
-  --brand-foreground: oklch(0.99 0 0);
-  --brand-accent: oklch(0.8 0.16 78);
-  --brand-accent-foreground: oklch(0.25 0.03 78);
+  /* ═══════════════════════════════════════════════════
+     BRAND COLORS — Forest Ink & Amber Gold
+     ═══════════════════════════════════════════════════ */
 
-  /* UI */
-  --background: oklch(0.99 0.008 80);
-  --foreground: oklch(0.19 0.02 265);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.19 0.02 265);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.19 0.02 265);
-  --primary: oklch(0.55 0.22 265);
-  --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.012 265);
-  --secondary-foreground: oklch(0.25 0.03 265);
-  --muted: oklch(0.97 0.01 80);
-  --muted-foreground: oklch(0.5 0.02 265);
-  --accent: oklch(0.96 0.012 265);
-  --accent-foreground: oklch(0.25 0.03 265);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.91 0.01 265);
-  --input: oklch(0.91 0.01 265);
-  --ring: oklch(0.65 0.18 265);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.19 0.02 265);
-  --sidebar-primary: oklch(0.55 0.22 265);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.96 0.012 265);
-  --sidebar-accent-foreground: oklch(0.25 0.03 265);
-  --sidebar-border: oklch(0.91 0.01 265);
-  --sidebar-ring: oklch(0.65 0.18 265);
+  /* Primary: Forest Ink — Deep intellectual green */
+  --brand: oklch(0.35 0.08 160);
+  --brand-foreground: oklch(0.98 0.01 90);
+
+  /* Accent: Amber Gold — Warm, refined highlight */
+  --brand-accent: oklch(0.72 0.14 75);
+  --brand-accent-foreground: oklch(0.25 0.04 60);
+
+  /* ═══════════════════════════════════════════════════
+     UI FOUNDATION — Warm Paper Tones
+     ═══════════════════════════════════════════════════ */
+
+  /* Background: Warm off-white, like quality paper */
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.18 0.02 45);
+
+  /* Cards: Slightly warmer than background */
+  --card: oklch(0.995 0.004 85);
+  --card-foreground: oklch(0.18 0.02 45);
+
+  /* Popover: Clean white with warmth */
+  --popover: oklch(0.998 0.002 85);
+  --popover-foreground: oklch(0.18 0.02 45);
+
+  /* Primary actions: Forest Ink */
+  --primary: oklch(0.35 0.08 160);
+  --primary-foreground: oklch(0.98 0.01 90);
+
+  /* Secondary: Soft sage undertone */
+  --secondary: oklch(0.94 0.015 150);
+  --secondary-foreground: oklch(0.30 0.04 160);
+
+  /* Muted: Warm gray with paper warmth */
+  --muted: oklch(0.95 0.008 80);
+  --muted-foreground: oklch(0.45 0.02 60);
+
+  /* Accent: Amber highlights */
+  --accent: oklch(0.95 0.04 75);
+  --accent-foreground: oklch(0.30 0.06 60);
+
+  /* Destructive: Muted terracotta, not harsh red */
+  --destructive: oklch(0.55 0.18 25);
+
+  /* Borders: Subtle warm gray */
+  --border: oklch(0.88 0.01 70);
+  --input: oklch(0.90 0.01 70);
+  --ring: oklch(0.45 0.06 160);
+
+  /* ═══════════════════════════════════════════════════
+     CHARTS — Earthy, Editorial Palette
+     ═══════════════════════════════════════════════════ */
+  --chart-1: oklch(0.55 0.12 160);  /* Forest */
+  --chart-2: oklch(0.68 0.13 75);   /* Amber */
+  --chart-3: oklch(0.50 0.10 45);   /* Terracotta */
+  --chart-4: oklch(0.60 0.08 200);  /* Slate teal */
+  --chart-5: oklch(0.72 0.10 95);   /* Soft gold */
+
+  /* ═══════════════════════════════════════════════════
+     SIDEBAR — Grounded, Library Feel
+     ═══════════════════════════════════════════════════ */
+  --sidebar: oklch(0.975 0.008 80);
+  --sidebar-foreground: oklch(0.20 0.02 45);
+  --sidebar-primary: oklch(0.35 0.08 160);
+  --sidebar-primary-foreground: oklch(0.98 0.01 90);
+  --sidebar-accent: oklch(0.92 0.02 75);
+  --sidebar-accent-foreground: oklch(0.28 0.04 60);
+  --sidebar-border: oklch(0.88 0.01 70);
+  --sidebar-ring: oklch(0.45 0.06 160);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   DARK MODE — Midnight Study
+
+   Like a late-night library or a scholar's study:
+   Deep, warm darks with amber lamplight accents
+   ═══════════════════════════════════════════════════════════ */
 
 .dark {
-  /* Brand */
-  --brand: oklch(0.72 0.16 265);
-  --brand-foreground: oklch(0.14 0.02 265);
-  --brand-accent: oklch(0.74 0.14 78);
-  --brand-accent-foreground: oklch(0.14 0.02 265);
+  /* Brand: Lifted forest green for dark mode visibility */
+  --brand: oklch(0.60 0.10 155);
+  --brand-foreground: oklch(0.12 0.02 160);
 
-  /* UI */
-  --background: oklch(0.14 0.02 265);
-  --foreground: oklch(0.98 0.005 80);
-  --card: oklch(0.18 0.02 265);
-  --card-foreground: oklch(0.98 0.005 80);
-  --popover: oklch(0.18 0.02 265);
-  --popover-foreground: oklch(0.98 0.005 80);
-  --primary: oklch(0.72 0.16 265);
-  --primary-foreground: oklch(0.14 0.02 265);
-  --secondary: oklch(0.23 0.02 265);
-  --secondary-foreground: oklch(0.98 0.005 80);
-  --muted: oklch(0.23 0.02 265);
-  --muted-foreground: oklch(0.74 0.02 265);
-  --accent: oklch(0.23 0.02 265);
-  --accent-foreground: oklch(0.98 0.005 80);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(0.35 0.02 265);
-  --input: oklch(0.35 0.02 265);
-  --ring: oklch(0.65 0.16 265);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.23 0.02 265);
-  --sidebar-accent-foreground: oklch(0.98 0.005 80);
-  --sidebar-border: oklch(0.35 0.02 265);
-  --sidebar-ring: oklch(0.65 0.16 265);
+  /* Accent: Warm amber glow */
+  --brand-accent: oklch(0.75 0.12 80);
+  --brand-accent-foreground: oklch(0.15 0.03 60);
+
+  /* Background: Deep warm charcoal, not pure black */
+  --background: oklch(0.14 0.015 60);
+  --foreground: oklch(0.92 0.01 80);
+
+  /* Cards: Slightly elevated surface */
+  --card: oklch(0.18 0.015 60);
+  --card-foreground: oklch(0.92 0.01 80);
+
+  /* Popover: Distinct elevated layer */
+  --popover: oklch(0.20 0.015 60);
+  --popover-foreground: oklch(0.92 0.01 80);
+
+  /* Primary: Lifted forest for contrast */
+  --primary: oklch(0.60 0.10 155);
+  --primary-foreground: oklch(0.12 0.02 160);
+
+  /* Secondary: Muted forest undertone */
+  --secondary: oklch(0.22 0.02 150);
+  --secondary-foreground: oklch(0.88 0.01 80);
+
+  /* Muted: Warm dark gray */
+  --muted: oklch(0.22 0.012 60);
+  --muted-foreground: oklch(0.65 0.015 70);
+
+  /* Accent: Soft amber glow */
+  --accent: oklch(0.25 0.03 70);
+  --accent-foreground: oklch(0.90 0.01 80);
+
+  /* Destructive: Warmer in dark mode */
+  --destructive: oklch(0.62 0.18 25);
+
+  /* Borders: Subtle warm edges */
+  --border: oklch(0.30 0.015 60);
+  --input: oklch(0.28 0.015 60);
+  --ring: oklch(0.55 0.08 155);
+
+  /* Charts: Adjusted for dark backgrounds */
+  --chart-1: oklch(0.65 0.12 155);
+  --chart-2: oklch(0.72 0.12 80);
+  --chart-3: oklch(0.60 0.12 30);
+  --chart-4: oklch(0.58 0.10 200);
+  --chart-5: oklch(0.70 0.10 95);
+
+  /* Sidebar: Slightly distinct from background */
+  --sidebar: oklch(0.12 0.015 60);
+  --sidebar-foreground: oklch(0.92 0.01 80);
+  --sidebar-primary: oklch(0.60 0.10 155);
+  --sidebar-primary-foreground: oklch(0.12 0.02 160);
+  --sidebar-accent: oklch(0.24 0.025 70);
+  --sidebar-accent-foreground: oklch(0.90 0.01 80);
+  --sidebar-border: oklch(0.28 0.015 60);
+  --sidebar-ring: oklch(0.55 0.08 155);
 }
+
+/* ═══════════════════════════════════════════════════════════
+   TAILWIND THEME MAPPING
+   ═══════════════════════════════════════════════════════════ */
 
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* Core */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
+  /* Components */
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
+  /* Actions */
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
+  /* States */
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+
+  /* Borders & Focus */
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  /* Charts */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -132,17 +225,35 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Brand */
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
   --color-brand-accent: var(--brand-accent);
   --color-brand-accent-foreground: var(--brand-accent-foreground);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════ */
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    /* Subtle warm texture for that printed-page feel */
+    background-image:
+      radial-gradient(ellipse at 100% 0%, oklch(0.95 0.02 75 / 0.3) 0%, transparent 50%),
+      radial-gradient(ellipse at 0% 100%, oklch(0.92 0.015 150 / 0.2) 0%, transparent 50%);
+  }
+
+  .dark body,
+  body:is(.dark *) {
+    /* Subtle vignette for dark mode depth */
+    background-image:
+      radial-gradient(ellipse at 100% 0%, oklch(0.25 0.03 70 / 0.15) 0%, transparent 50%),
+      radial-gradient(ellipse at 0% 100%, oklch(0.20 0.02 155 / 0.1) 0%, transparent 50%);
   }
 }
